@@ -1,3 +1,5 @@
+import { Platform } from 'react-native';
+
 const brandGold = '#d2a907';
 const richBlack = '#0a0a0a';
 const pureWhite = '#ffffff';
