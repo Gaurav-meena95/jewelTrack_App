@@ -29,7 +29,7 @@ export default function Settings() {
     );
   };
 
-  const SettingItem = ({ icon, label, onPress, color = theme.text, sub ]: any) => (
+  const SettingItem = ({ icon, label, onPress, color = theme.text, sub }: any) => (
     <TouchableOpacity 
       style={[styles.settingItem, { backgroundColor: theme.card, borderColor: theme.border }]} 
       onPress={onPress}

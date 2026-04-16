@@ -33,7 +33,7 @@ export default function AddInventory() {
         totalWeight: parseFloat(form.totalWeight)
       };
 
-      const res = await api.post('/inventory/create', payload);
+      const res = await api.post('/shops/inventory/create', payload);
       if (res.data.success) {
         Alert.alert('Success', 'Stock added to inventory! 📦');
         router.back();

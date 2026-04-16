@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../utils/api';
-import { saveUser } from '../utils/auth';
+import { saveToken, saveUser } from '../utils/auth';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Login() {
@@ -15,6 +15,7 @@ export default function Login() {
     setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
+      await saveToken(res.data.data.token, res.data.data.refreshToken);
       await saveUser(res.data.data.user);
       router.replace('/(tabs)');
     } catch (error: any) {

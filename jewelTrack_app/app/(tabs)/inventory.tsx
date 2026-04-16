@@ -29,9 +29,9 @@ export default function Inventory() {
     else setLoading(true);
 
     try {
-      const response = await api.get('/inventory/me');
+      const response = await api.get('/shops/inventory/me');
       if (response.data.success) {
-        setItems(response.data.data);
+        setItems(response.data.data.allInventorys || []);
       }
     } catch (error: any) {
       console.error('Fetch Inventory Error:', error.message);
@@ -57,7 +57,7 @@ export default function Inventory() {
           style: 'destructive',
           onPress: async () => {
              try {
-               await api.delete(`/inventory/delete?inventoryId=${itemId}`);
+               await api.delete(`/shops/inventory/delete?inventory_id=${itemId}`);
                fetchInventory();
              } catch(err) {
                Alert.alert('Error', 'Failed to delete item');

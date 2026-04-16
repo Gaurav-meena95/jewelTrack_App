@@ -57,13 +57,13 @@ export default function Dashboard() {
             icon="receipt" 
             label="New Bill" 
             color="#eab71e" 
-            onPress={() => Alert.alert('Info', 'Billing starting soon!')} 
+            onPress={() => router.push('/create-bill')} 
           />
           <QuickAction 
             icon="time" 
             label="New Order" 
             color="#2ecc71" 
-            onPress={() => Alert.alert('Info', 'Orders starting soon!')} 
+            onPress={() => router.push('/create-order')} 
           />
           <QuickAction 
             icon="cube" 

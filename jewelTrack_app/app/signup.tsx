@@ -34,8 +34,8 @@ export default function Signup() {
       
       await saveUser(user);
 
-      Alert.alert('Success', 'Shop Registered Successfully!');
-      router.replace('/(tabs)'); 
+      Alert.alert('Success', 'Shop Registered Successfully! Please Login.');
+      router.replace('/login'); 
     } catch (error: any) {
       console.log("Signup Error:", error.response?.data || error.message);
       Alert.alert('Signup Failed', error.response?.data?.message || 'Server not connected');
