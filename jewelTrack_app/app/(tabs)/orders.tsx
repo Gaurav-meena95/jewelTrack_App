@@ -7,7 +7,8 @@ import {
   TouchableOpacity, 
   ActivityIndicator, 
   RefreshControl,
-  Alert
+  Alert,
+  TextInput
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -23,6 +24,7 @@ export default function Orders() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const fetchOrders = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -142,13 +144,25 @@ export default function Orders() {
          </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={theme.icon} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+          placeholder="Search by customer name..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))}
           renderItem={renderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
@@ -175,9 +189,12 @@ export default function Orders() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  actionContainer: { padding: 20, paddingBottom: 10 },
+  actionContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   addNewBtn: { height: 60, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, elevation: 4 },
   addNewText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10 },
+  searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
+  searchInput: { flex: 1, height: 50, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 15 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   card: { padding: 20, borderRadius: 20, marginBottom: 15, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },

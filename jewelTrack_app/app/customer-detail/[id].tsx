@@ -241,8 +241,8 @@ export default function CustomerDetail() {
         />
 
       </View>
-      </View>
       <View style={{ height: 50 }} />
+
 
       <Modal visible={editModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>

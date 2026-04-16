@@ -1,45 +1,49 @@
-import { Platform } from 'react-native';
-
-const tintColorLight = '#d2a907'; // Brand Gold
-const tintColorDark = '#fff';
+const brandGold = '#d2a907';
+const richBlack = '#0a0a0a';
+const pureWhite = '#ffffff';
 
 export const Colors = {
   light: {
-    brand: '#d2a907',
-    text: '#11181C',
-    background: '#FFFFFF',
-    card: '#F5F5F5',
-    border: '#E0E0E0',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
+    brand: brandGold,
+    text: '#1C1C1E',
+    subtext: '#636366',
+    background: '#F8F9FA', // Soft premium grey-white
+    card: '#FFFFFF',
+    border: '#E5E5EA',
+    tint: brandGold,
+    icon: '#8E8E93',
+    tabIconDefault: '#8E8E93',
+    tabIconSelected: brandGold,
+    error: '#FF3B30',
+    success: '#34C759',
   },
   dark: {
-    brand: '#d2a907',
-    text: '#ECEDEE',
-    background: '#121212',
-    card: '#1E1E1E',
-    border: '#333333',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
+    brand: brandGold,
+    text: '#F2F2F7',
+    subtext: '#8E8E93',
+    background: richBlack,
+    card: '#1C1C1E',
+    border: '#38383A',
+    tint: pureWhite,
+    icon: '#8E8E93',
+    tabIconDefault: '#8E8E93',
+    tabIconSelected: pureWhite,
+    error: '#FF453A',
+    success: '#30D158',
   },
 };
 
-// Error yahan se aa raha tha, ye missing tha:
 export const Fonts = Platform.select({
     ios: {
-      sans: 'system-ui',
-      serif: 'ui-serif',
-      rounded: 'ui-rounded',
+      sans: 'Inter, system-ui',
+      bold: 'Inter-Bold, system-ui',
+      medium: 'Inter-Medium, system-ui',
       mono: 'ui-monospace',
     },
     default: {
-      sans: 'normal',
-      serif: 'serif',
-      rounded: 'normal',
+      sans: 'Inter, sans-serif',
+      bold: 'Inter-Bold, sans-serif',
+      medium: 'Inter-Medium, sans-serif',
       mono: 'monospace',
     },
   });

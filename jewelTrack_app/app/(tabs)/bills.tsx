@@ -11,6 +11,8 @@ import {
   Modal,
   TextInput
 } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
 import { useColorScheme } from 'react-native';
@@ -26,6 +28,7 @@ export default function Bills() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Payment Modal State
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -97,6 +100,106 @@ export default function Bills() {
     }
   };
 
+  const printBill = async (bill: any) => {
+    try {
+      const customer = bill.customerId || { name: 'Walk-in Customer', phone: '', address: '' };
+      const items = bill.invoice?.items || [];
+      const grandTotal = bill.invoice?.grandTotal || 0;
+      
+      const htmlContent = `
+        <html>
+          <head>
+            <style>
+              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; }
+              .header { text-align: center; border-bottom: 2px solid #d2a907; padding-bottom: 20px; margin-bottom: 20px; }
+              .title { font-size: 32px; font-weight: bold; color: #d2a907; margin: 0; }
+              .subtitle { font-size: 16px; color: #666; margin-top: 5px; }
+              .row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+              .details-box { background: #f9f9f9; padding: 15px; border-radius: 8px; margin-bottom: 30px; }
+              table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+              th { background: #f0f0f0; padding: 12px; text-align: left; font-weight: bold; border-bottom: 2px solid #ccc; }
+              td { padding: 12px; border-bottom: 1px solid #eee; }
+              .totals { width: 50%; float: right; }
+              .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+              .grand-total { font-size: 20px; font-weight: bold; color: #d2a907; border-top: 2px solid #d2a907; padding-top: 10px; border-bottom: none; }
+              .footer { text-align: center; margin-top: 60px; font-size: 12px; color: #999; border-top: 1px solid #eee; padding-top: 20px; clear: both; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1 class="title">JewelTrack Invoices</h1>
+              <div class="subtitle">Premium Jewelry & Accessories</div>
+              <div>Invoice Date: ${new Date(bill.createdAt).toLocaleDateString()}</div>
+              <div>Receipt No: #${bill._id.slice(-6).toUpperCase()}</div>
+            </div>
+            
+            <div class="details-box">
+              <strong>Bill To:</strong><br/>
+              ${customer.name}<br/>
+              Phone: ${customer.phone}<br/>
+              ${customer.address ? `Address: ${customer.address}` : ''}
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Item Description</th>
+                  <th>Metal</th>
+                  <th>Weight (g)</th>
+                  <th>Rate/g</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${items.map((i: any) => `
+                  <tr>
+                    <td>${i.itemName} <br/> <small>GST: ${i.gstPercent}%, Charge: ${i.makingChargePercent}%</small></td>
+                    <td style="text-transform: capitalize;">${i.metal}</td>
+                    <td>${i.weight}</td>
+                    <td>₹${i.ratePerGram || 0}</td>
+                    <td>₹${i.finalPrice || 0}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+
+            <div class="totals">
+              <div class="totals-row">
+                <span>Subtotal</span>
+                <span>₹ ${grandTotal.toFixed(2)}</span>
+              </div>
+              <div class="totals-row">
+                <span>Amount Paid</span>
+                <span style="color: #2ecc71;">₹ ${bill.payment.amountPaid.toFixed(2)}</span>
+              </div>
+              <div class="totals-row grand-total">
+                <span>Balance Due</span>
+                <span style="color: #e74c3c;">₹ ${bill.payment.remainingAmount.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <div class="footer">
+              <p>Thank you for choosing us! All items sold are subject to standard jewelry terms and conditions.</p>
+              <p>Software Powered by JewelTrack App</p>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const { uri } = await Print.printToFileAsync({ html: htmlContent });
+      const canShare = await Sharing.isAvailableAsync();
+      
+      if (canShare) {
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: 'Share Invoice' });
+      } else {
+        Alert.alert('Success', 'PDF generated at: ' + uri);
+      }
+    } catch (e: any) {
+      console.log('PDF Error', e);
+      Alert.alert('Error', 'Failed to generate PDF invoice.');
+    }
+  };
+
   const renderItem = ({ item }: { item: any }) => {
     const customer = item.customerId || { name: 'Unknown', phone: 'N/A' };
     const firstItem = item.invoice?.items && item.invoice.items.length > 0 ? item.invoice.items[0] : { itemName: 'Jewelry Items' };
@@ -118,12 +221,17 @@ export default function Bills() {
                 </Text>
              </View>
           </View>
-          <View style={{ alignItems: 'flex-end' }}>
-             <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(2)}</Text>
-             <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-                 <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 10 }}>
-                    {payment.paymentStatus.replace('_', ' ').toUpperCase()}
-                 </Text>
+          <View style={{ alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
+             <TouchableOpacity style={{ padding: 5, marginTop: -5 }} onPress={() => printBill(item)}>
+               <Ionicons name="print-outline" size={22} color={theme.text} style={{ opacity: 0.7 }} />
+             </TouchableOpacity>
+             <View style={{ alignItems: 'flex-end' }}>
+               <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(2)}</Text>
+               <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+                   <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 10 }}>
+                      {payment.paymentStatus.replace('_', ' ').toUpperCase()}
+                   </Text>
+               </View>
              </View>
           </View>
         </View>
@@ -170,13 +278,25 @@ export default function Bills() {
          </TouchableOpacity>
       </View>
 
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={theme.icon} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+          placeholder="Search by customer name..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
       {loading ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" color={theme.brand} />
         </View>
       ) : (
         <FlatList
-          data={items}
+          data={items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))}
           renderItem={renderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
@@ -260,9 +380,12 @@ export default function Bills() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  actionContainer: { padding: 20, paddingBottom: 10 },
+  actionContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   addNewBtn: { height: 60, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, elevation: 4 },
   addNewText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10 },
+  searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
+  searchInput: { flex: 1, height: 50, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 15 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   card: { padding: 20, borderRadius: 20, marginBottom: 15, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
