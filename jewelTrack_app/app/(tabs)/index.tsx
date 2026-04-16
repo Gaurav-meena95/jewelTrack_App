@@ -1,16 +1,20 @@
 // Is code ko app/(tabs)/index.tsx mein update karo (replace whole file)
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useColorScheme, Alert } from 'react-native';
 import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import api from '../../utils/api';
 
 export default function Dashboard() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const [user, setUser] = useState<any>(null);
+  
+  const [totalReceivables, setTotalReceivables] = useState(0);
+  const [pendingOrders, setPendingOrders] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -19,6 +23,39 @@ export default function Dashboard() {
     };
     loadUser();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const fetchStats = async () => {
+        try {
+          const [billsRes, ordersRes] = await Promise.all([
+            api.get('/customers/bills/me'),
+            api.get('/customers/orders/me')
+          ]);
+
+          if (billsRes.data.success) {
+            const bills = billsRes.data.data.data || [];
+            const receivables = bills.reduce((sum: number, bill: any) => {
+               // sum up the remainingAmount from partially paid and unpaid bills
+               const rem = (bill.payment && bill.payment.remainingAmount) ? bill.payment.remainingAmount : 0;
+               return sum + rem;
+            }, 0);
+            setTotalReceivables(receivables);
+          }
+
+          if (ordersRes.data.success) {
+            const orders = ordersRes.data.data.data || [];
+            const pending = orders.filter((o: any) => o.orderStatus !== 'complete');
+            setPendingOrders(pending.length);
+          }
+        } catch (e) {
+          console.log('Failed to fetch dashboard stats', e);
+        }
+      };
+      
+      fetchStats();
+    }, [])
+  );
 
   const QuickAction = ({ icon, label, color, onPress }: any) => (
     <TouchableOpacity style={styles.actionItem} onPress={onPress}>
@@ -83,11 +120,11 @@ export default function Dashboard() {
       {/* Stats Cards */}
       <View style={styles.statsRow}>
         <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-          <Text style={[styles.statValue, { color: theme.text }]}>₹ 0</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>₹ {totalReceivables.toLocaleString('en-IN')}</Text>
           <Text style={[styles.statLabel, { color: theme.text }]}>Total Receivables</Text>
         </View>
         <View style={[styles.statCard, { backgroundColor: theme.card }]}>
-          <Text style={[styles.statValue, { color: theme.text }]}>0</Text>
+          <Text style={[styles.statValue, { color: theme.text }]}>{pendingOrders}</Text>
           <Text style={[styles.statLabel, { color: theme.text }]}>Pending Orders</Text>
         </View>
       </View>

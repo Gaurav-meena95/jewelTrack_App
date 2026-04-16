@@ -26,6 +26,10 @@ export default function CustomerDetail() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({ name: '', father_name: '', phone: '', email: '', address: '' });
+
   const fetchDetails = async () => {
     try {
       const response = await api.get(`/customers/register/detail?customerId=${id}`);
@@ -44,6 +48,38 @@ export default function CustomerDetail() {
   useEffect(() => {
     fetchDetails();
   }, [id]);
+
+  const openEditModal = () => {
+    if (data?.customer) {
+      setEditForm({
+        name: data.customer.name || '',
+        father_name: data.customer.father_name || '',
+        phone: data.customer.phone || '',
+        email: data.customer.email || '',
+        address: data.customer.address || ''
+      });
+      setEditModalVisible(true);
+    }
+  };
+
+  const handleUpdate = async () => {
+    if (!editForm.name || !editForm.phone) {
+      return Alert.alert('Error', 'Name and Phone are required.');
+    }
+    setEditing(true);
+    try {
+      const res = await api.patch(`/customers/register/update?customerId=${id}`, editForm);
+      if (res.data.success) {
+        Alert.alert('Success', 'Customer updated successfully!');
+        setEditModalVisible(false);
+        fetchDetails();
+      }
+    } catch (err: any) {
+      Alert.alert('Update Failed', err.response?.data?.message || 'Failed to update customer');
+    } finally {
+      setEditing(false);
+    }
+  };
 
   const handleDelete = () => {
     Alert.alert(
@@ -133,7 +169,7 @@ export default function CustomerDetail() {
         <View style={styles.actionRow}>
           <TouchableOpacity 
             style={[styles.actionBtn, { backgroundColor: theme.brand + '15' }]}
-            onPress={() => Alert.alert('Coming Soon', 'Edit feature is under development')}
+            onPress={openEditModal}
           >
             <Ionicons name="create-outline" size={20} color={theme.brand} />
             <Text style={{ color: theme.brand, fontWeight: 'bold', marginLeft: 5 }}>Edit</Text>
@@ -205,7 +241,77 @@ export default function CustomerDetail() {
         />
 
       </View>
+      </View>
       <View style={{ height: 50 }} />
+
+      <Modal visible={editModalVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+           <ScrollView contentContainerStyle={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+             <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Customer</Text>
+
+             <Text style={[styles.modalLabel, { color: theme.text }]}>Full Name *</Text>
+             <TextInput 
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                placeholder="Full Name"
+                value={editForm.name}
+                onChangeText={(val) => setEditForm({...editForm, name: val})}
+             />
+             
+             <Text style={[styles.modalLabel, { color: theme.text }]}>Father/Husband Name</Text>
+             <TextInput 
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                placeholder="Father's Name"
+                value={editForm.father_name}
+                onChangeText={(val) => setEditForm({...editForm, father_name: val})}
+             />
+             
+             <Text style={[styles.modalLabel, { color: theme.text }]}>Phone Number *</Text>
+             <TextInput 
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                placeholder="10 digit phone"
+                keyboardType="phone-pad"
+                value={editForm.phone}
+                onChangeText={(val) => setEditForm({...editForm, phone: val})}
+             />
+
+             <Text style={[styles.modalLabel, { color: theme.text }]}>Email Address (Optional)</Text>
+             <TextInput 
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                placeholder="Email Address"
+                autoCapitalize="none"
+                value={editForm.email}
+                onChangeText={(val) => setEditForm({...editForm, email: val})}
+             />
+
+             <Text style={[styles.modalLabel, { color: theme.text }]}>Complete Address</Text>
+             <TextInput 
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, height: 80, textAlignVertical: 'top' }]} 
+                placeholder="Street Address"
+                multiline
+                value={editForm.address}
+                onChangeText={(val) => setEditForm({...editForm, address: val})}
+             />
+
+              <View style={styles.modalBtns}>
+                 <TouchableOpacity 
+                   style={[styles.modalCloseBtn, { borderColor: theme.border }]} 
+                   onPress={() => setEditModalVisible(false)}
+                 >
+                   <Text style={{ color: theme.text, fontWeight: 'bold' }}>Cancel</Text>
+                 </TouchableOpacity>
+
+                 <TouchableOpacity 
+                   style={[styles.modalSubmitBtn, { backgroundColor: theme.brand }]} 
+                   onPress={handleUpdate}
+                   disabled={editing}
+                 >
+                   {editing ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Update</Text>}
+                 </TouchableOpacity>
+              </View>
+           </ScrollView>
+        </View>
+      </Modal>
+
     </ScrollView>
   );
 }
@@ -274,5 +380,13 @@ const styles = StyleSheet.create({
   itemPrice: { fontSize: 16, fontWeight: 'bold' },
   statusBadge: { fontSize: 10, fontWeight: '800', marginTop: 4 },
   emptyCard: { padding: 25, borderRadius: 15, alignItems: 'center', borderWidth: 1, borderStyle: 'dashed' },
-  emptyText: { fontSize: 14, opacity: 0.5 }
+  emptyText: { fontSize: 14, opacity: 0.5 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
+  modalContent: { padding: 25, borderRadius: 20, borderWidth: 1 },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 15 },
+  modalLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, marginTop: 10, opacity: 0.8 },
+  modalInput: { padding: 12, borderRadius: 10, borderWidth: 1, fontSize: 14 },
+  modalBtns: { flexDirection: 'row', gap: 15, marginTop: 25 },
+  modalCloseBtn: { flex: 1, padding: 15, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
+  modalSubmitBtn: { flex: 1, padding: 15, borderRadius: 12, alignItems: 'center' }
 });
