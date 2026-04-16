@@ -66,10 +66,16 @@ export default function Dashboard() {
             onPress={() => Alert.alert('Info', 'Orders starting soon!')} 
           />
           <QuickAction 
+            icon="cube" 
+            label="Inventory" 
+            color="#9b59b6" 
+            onPress={() => router.push('/(tabs)/inventory')} 
+          />
+          <QuickAction 
             icon="shield-checkmark" 
             label="Collateral" 
             color="#e74c3c" 
-            onPress={() => router.push('/collateral')} 
+            onPress={() => router.push('/(tabs)/collateral')} 
           />
         </View>
       </View>
