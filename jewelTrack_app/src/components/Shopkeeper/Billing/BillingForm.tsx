@@ -8,10 +8,11 @@ import {
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
+import api from '../../../../utils/api';
+import { roundMoney, roundWeight } from '../../../../utils/money';
 
 const { width } = Dimensions.get('window');
 const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
@@ -27,7 +28,13 @@ export default function CreateBill() {
   const [presets, setPresets] = useState({ itemNames: [] as string[], purities: [] as string[] });
   
   // Cart State
+  // Customer State
+  const [customerPhone, setCustomerPhone] = useState('');
+  const [customerFound, setCustomerFound] = useState<boolean | null>(null);
+  const [customerData, setCustomerData] = useState({ name: '', father_name: '', address: '', email: '' });
   const [selectedCustomer, setSelectedCustomer] = useState('');
+  
+  // Cart State
   const [cart, setCart] = useState<any[]>([]);
   const [currentItem, setCurrentItem] = useState({
     itemName: '',
@@ -65,14 +72,54 @@ export default function CreateBill() {
     init();
   }, []);
 
+  const checkCustomer = async () => {
+    if (customerPhone.length < 10) return;
+    setLoading(true);
+    try {
+      const res = await api.get(`/customers/register/get?phone=${customerPhone}`);
+      if (res.data?.data && res.data.data.customer) {
+        setCustomerFound(true);
+        const c = res.data.data.customer;
+        setCustomerData({ name: c.name || '', father_name: c.father_name || '', address: c.address || '', email: c.email || '' });
+        setSelectedCustomer(customerPhone);
+      } else {
+        setCustomerFound(false);
+        setCustomerData({ name: '', father_name: '', address: '', email: '' });
+      }
+    } catch (err) {
+      setCustomerFound(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const saveCustomer = async () => {
+    if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
+    setLoading(true);
+    try {
+      const payload = { phone: customerPhone, ...customerData };
+      if (customerFound) {
+        await api.patch('/customers/register/update', payload);
+      } else {
+        await api.post('/customers/register', payload);
+      }
+      setSelectedCustomer(customerPhone);
+      Alert.alert('Success', 'Customer details saved!');
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to save customer');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const calculateItemPrice = (item: any) => {
-    const w = parseFloat(item.weight) || 0;
+    const w = roundWeight(item.weight);
     const r = parseFloat(item.ratePerGram) || 0;
     const base = w * r;
     const making = base * (parseFloat(item.makingChargePercent || '0') / 100);
     const gst = base * (parseFloat(item.gstPercent || '0') / 100);
     const disc = parseFloat(item.manualAdjustment || '0');
-    return base + making + gst - disc;
+    return roundMoney(base + making + gst - disc);
   };
 
   const addItemToCart = () => {
@@ -151,16 +198,50 @@ export default function CreateBill() {
         </View>
 
         <View style={styles.content}>
-           {/* CUSTOMER SELECT */}
-           <View style={styles.section}>
-              <Text style={[styles.label, { color: theme.text }]}>CUSTOMER *</Text>
-              <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                 <Picker selectedValue={selectedCustomer} onValueChange={setSelectedCustomer} style={{ color: theme.text }}>
-                    <Picker.Item label="Select Customer" value="" />
-                    {customers.map(c => <Picker.Item key={c._id} label={`${c.name} (${c.phone})`} value={c.phone} />)}
-                 </Picker>
-              </View>
-           </View>
+            {/* CUSTOMER LOOKUP */}
+            <View style={[styles.lookupBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+               <Text style={[styles.label, { color: theme.text }]}>CUSTOMER PHONE</Text>
+               <View style={styles.lookupRow}>
+                  <TextInput 
+                    style={[styles.input, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                    placeholder="Search by phone..." placeholderTextColor="#999"
+                    keyboardType="numeric" maxLength={10} value={customerPhone}
+                    onChangeText={setCustomerPhone}
+                  />
+                  <TouchableOpacity style={[styles.checkBtn, { backgroundColor: theme.brand }]} onPress={checkCustomer}>
+                     <Ionicons name="search" size={20} color="#000" />
+                  </TouchableOpacity>
+               </View>
+
+               {customerFound === true && (
+                 <View style={styles.foundBox}>
+                    <Ionicons name="checkmark-circle" size={20} color="#2ecc71" />
+                    <View>
+                       <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16 }}>{customerData.name}</Text>
+                       <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>{customerData.address}</Text>
+                    </View>
+                 </View>
+               )}
+
+               {customerFound === false && (
+                 <View style={styles.regBox}>
+                    <Text style={{ color: theme.text, fontSize: 12, marginBottom: 10, opacity: 0.7 }}>New Customer! Please register:</Text>
+                    <TextInput 
+                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
+                       placeholder="Full Name *" placeholderTextColor="#999"
+                       value={customerData.name} onChangeText={(v)=>setCustomerData({...customerData, name: v})}
+                    />
+                    <TextInput 
+                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
+                       placeholder="Father's Name" placeholderTextColor="#999"
+                       value={customerData.father_name} onChangeText={(v)=>setCustomerData({...customerData, father_name: v})}
+                    />
+                    <TouchableOpacity style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
+                       <Text style={{ color: '#000', fontWeight: 'bold' }}>REGISTER & CONTINUE</Text>
+                    </TouchableOpacity>
+                 </View>
+               )}
+            </View>
 
            {/* ADD ITEM FORM */}
            <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
@@ -298,6 +379,9 @@ const styles = StyleSheet.create({
   stickyHeader: { padding: 20, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, zIndex: 10 },
   headerTitle: { fontSize: 20 },
   headerSub: { fontSize: 12, opacity: 0.5 },
+  lookupRow: { flexDirection: 'row', gap: 10 },
+  checkBtn: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  saveCustBtn: { height: 45, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   totalBadge: { backgroundColor: '#d2a907', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
   totalBadgeVal: { color: '#000', fontWeight: 'bold' },
 
@@ -307,27 +391,31 @@ const styles = StyleSheet.create({
   pickerBox: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', height: 50, justifyContent: 'center' },
   input: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 14 },
   
-  itemForm: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 2 },
-  formTitle: { fontSize: 16, marginBottom: 15 },
+  lookupBox: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+  foundBox: { flexDirection: 'row', alignItems: 'center', gap: 15, marginTop: 15, padding: 15, borderRadius: 15, backgroundColor: 'rgba(46, 204, 113, 0.1)' },
+  regBox: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
+  
+  itemForm: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+  formTitle: { fontSize: 18, marginBottom: 20 },
   row: { flexDirection: 'row', gap: 12, marginBottom: 15 },
-  addBtn: { height: 50, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 10 },
+  addBtn: { height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 10 },
   addBtnText: { fontWeight: 'bold', color: '#000' },
 
-  cartSection: { marginBottom: 25 },
-  cartItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: 15, borderBottomWidth: 1, gap: 15 },
-  cartItemName: { fontSize: 14 },
-  cartItemSub: { fontSize: 12, opacity: 0.5, marginTop: 2 },
-  cartItemPrice: { fontSize: 16 },
-  removeBtn: { padding: 5 },
+  cartSection: { marginBottom: 25, gap: 10 },
+  cartItem: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, borderWidth: 1, gap: 15 },
+  cartItemName: { fontSize: 15 },
+  cartItemSub: { fontSize: 12, opacity: 0.5, marginTop: 4 },
+  cartItemPrice: { fontSize: 17 },
+  removeBtn: { padding: 8, backgroundColor: 'rgba(231, 76, 60, 0.1)', borderRadius: 10 },
 
   imgRow: { flexDirection: 'row', gap: 10 },
-  pickBtn: { width: 80, height: 80, borderRadius: 15, borderWidth: 2, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  imgThumb: { width: 80, height: 80, borderRadius: 15, marginRight: 10 },
+  pickBtn: { width: 85, height: 85, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  imgThumb: { width: 85, height: 85, borderRadius: 20, marginRight: 10 },
 
   bottomSection: { marginTop: 20, gap: 20 },
-  grandTotalBox: { padding: 20, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
-  gtLabel: { fontSize: 12, fontWeight: 'bold' },
-  gtVal: { fontSize: 32, fontWeight: 'bold', marginTop: 5 },
-  finalBtn: { height: 65, borderRadius: 20, justifyContent: 'center', alignItems: 'center', shadowColor: '#d2a907', shadowOpacity: 0.3, shadowRadius: 15, elevation: 8 },
-  finalBtnText: { fontSize: 16, fontWeight: 'bold', color: '#000', letterSpacing: 1 }
+  grandTotalBox: { padding: 25, borderRadius: 30, borderWidth: 1, alignItems: 'center' },
+  gtLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 2, opacity: 0.6 },
+  gtVal: { fontSize: 36, fontWeight: 'bold', marginTop: 8 },
+  finalBtn: { height: 70, borderRadius: 25, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  finalBtnText: { fontSize: 17, fontWeight: 'bold', color: '#000', letterSpacing: 1 }
 });

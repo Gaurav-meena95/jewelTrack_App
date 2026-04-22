@@ -93,15 +93,17 @@ const updateOrders = async (req, res) => {
         const existingOrder = await Order.findById(order_id)
         if (!existingOrder) return res.status(404).json({ success: false, message: 'Order not found' })
 
-        const advance = Number(AdvancePayment) ?? existingOrder.AdvancePayment
-        const total = Number(Total) ?? existingOrder.Total
+        const advance = (AdvancePayment !== undefined) ? Number(AdvancePayment) : existingOrder.AdvancePayment
+        const total = (Total !== undefined) ? Number(Total) : existingOrder.Total
         if (advance > total) {
             return res.status(400).json({ success: false, message: 'Advance payment cannot exceed total amount' })
         }
     
-        const RemainingAmount = total - advance - amount
+        const RemainingAmount = req.body.RemainingAmount !== undefined 
+            ? req.body.RemainingAmount 
+            : (total - advance - (Number(amount) || 0))
+
         const paymentStatus = computePaymentStatus(total, advance)
-        console.log('fgerf',RemainingAmount)
 
         const updated = await Order.findByIdAndUpdate(
             order_id,

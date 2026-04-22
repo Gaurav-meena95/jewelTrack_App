@@ -5,9 +5,11 @@ import { useRouter } from 'expo-router';
 import api from '../utils/api';
 import { Colors } from '../constants/theme';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
 import { useColorScheme } from 'react-native';
 
 export default function Signup() {
+  const { setUser } = useAuth();
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
@@ -35,7 +37,7 @@ export default function Signup() {
       const res = await api.post('/auth/signup', form);
       const user = res.data.data.user;
       
-      await saveUser(user);
+      setUser(user);
 
       Alert.alert('Success', 'Shop Registered Successfully! Please Login.');
       router.replace('/login'); 
@@ -139,3 +141,4 @@ const styles = StyleSheet.create({
   link: { marginTop: 20, alignItems: 'center' },
   linkText: { fontSize: 14 }
 });
+

@@ -167,10 +167,20 @@ const recordBillPayment = async (req, res) => {
         const updated = await Bill.findByIdAndUpdate(
             bill_id,
             {
-                'payment.amountPaid': newTotalPaid,
-                'payment.remainingAmount': remainingAmount,
-                'payment.paymentStatus': paymentStatus,
-                ...(paymentMethod ? { 'payment.paymentMethod': paymentMethod } : {})
+                $set: {
+                    'payment.amountPaid': newTotalPaid,
+                    'payment.remainingAmount': remainingAmount,
+                    'payment.paymentStatus': paymentStatus,
+                    ...(paymentMethod ? { 'payment.paymentMethod': paymentMethod } : {})
+                },
+                $push: {
+                    paymentHistory: {
+                        amount: Number(additionalPayment),
+                        method: paymentMethod || 'cash',
+                        date: new Date(),
+                        notes: 'Payment recorded from App'
+                    }
+                }
             },
             { new: true }
         ).populate('customerId', 'name phone')

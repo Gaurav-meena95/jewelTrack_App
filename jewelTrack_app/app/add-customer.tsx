@@ -84,32 +84,7 @@ export default function AddCustomer() {
     }
   };
 
-  const InputField = ({ label, placeholder, value, onChangeText, keyboardType = 'default', multiline = false, required = false }: any) => (
-    <View style={styles.inputContainer}>
-      <Text style={[styles.label, { color: theme.text }]}>
-        {label} {required && <Text style={{ color: '#e74c3c' }}>*</Text>}
-      </Text>
-      <TextInput
-        placeholder={placeholder}
-        placeholderTextColor="#888"
-        style={[
-          styles.input,
-          { 
-            backgroundColor: theme.card, 
-            color: theme.text, 
-            borderColor: theme.border,
-            textAlignVertical: multiline ? 'top' : 'center',
-            height: multiline ? 100 : 55
-          }
-        ]}
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        numberOfLines={multiline ? 4 : 1}
-      />
-    </View>
-  );
+
 
   return (
     <KeyboardAvoidingView 
@@ -204,6 +179,9 @@ const styles = StyleSheet.create({
   header: { marginBottom: 30 },
   headerSubtitle: { fontSize: 14, marginTop: 5 },
   form: { gap: 5 },
+  inputContainer: { marginBottom: 15 },
+  label: { fontSize: 14, fontWeight: '600', marginBottom: 8, marginLeft: 4 },
+  input: { borderRadius: 12, paddingHorizontal: 15, paddingVertical: 12, borderWidth: 1, fontSize: 16 },
   submitBtn: {
     flexDirection: 'row', height: 60, borderRadius: 15,
     justifyContent: 'center', alignItems: 'center', marginTop: 20,

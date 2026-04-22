@@ -16,7 +16,7 @@ import { Colors } from '../../../../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../../../../utils/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import * as FileSystem from 'expo-file-system';
+import { documentDirectory, writeAsStringAsync } from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 
 const { width } = Dimensions.get('window');
@@ -98,12 +98,16 @@ export default function ReportComponent() {
       `Active Girvi Records,${filteredMetrics.activeGirvi}\n` +
       `Principal Outstanding,${filteredMetrics.loanValue}`;
 
-    const filePath = `${FileSystem.documentDirectory}JewelTrack_Report_${dateRange}.csv`;
+    if (!documentDirectory) {
+      Alert.alert('Error', 'Storage not accessible');
+      return;
+    }
+    const filePath = `${documentDirectory}JewelTrack_Report_${dateRange}.csv`;
     try {
       if (!(await Sharing.isAvailableAsync())) {
         return Alert.alert('Error', 'Sharing is not available on this device');
       }
-      await FileSystem.writeAsStringAsync(filePath, csvContent);
+      await writeAsStringAsync(filePath, csvContent);
       await Sharing.shareAsync(filePath);
     } catch (e) {
       Alert.alert('Error', 'Failed to generate report file');

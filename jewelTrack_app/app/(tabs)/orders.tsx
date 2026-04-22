@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -8,7 +8,10 @@ import {
   ActivityIndicator, 
   RefreshControl,
   Alert,
-  TextInput
+  TextInput,
+  Modal,
+  Image,
+  ScrollView
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -25,6 +28,13 @@ export default function Orders() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'dashboard' | 'history'>('dashboard');
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+
+  // Detail Modal State
+  const [showDetail, setShowDetail] = useState(false);
+  const [activeOrder, setActiveOrder] = useState<any>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   const fetchOrders = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -70,63 +80,137 @@ export default function Orders() {
     );
   };
 
+  const customerGroups = useMemo(() => {
+    const groups: { [key: string]: any } = {};
+    items.forEach(order => {
+      const phone = order.customerId?.phone;
+      if (!phone) return;
+      if (!groups[phone]) {
+        groups[phone] = {
+          name: order.customerId.name,
+          phone: order.customerId.phone,
+          totalDue: 0,
+          totalOrders: 0,
+          lastOrder: order.createdAt,
+          orders: []
+        };
+      }
+      groups[phone].totalDue += (order.RemainingAmount || 0);
+      groups[phone].totalOrders += 1;
+      groups[phone].orders.push(order);
+      if (new Date(order.createdAt) > new Date(groups[phone].lastOrder)) {
+        groups[phone].lastOrder = order.createdAt;
+      }
+    });
+
+    let list = Object.values(groups);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q) || c.phone.includes(q));
+    }
+    return list.sort((a, b) => new Date(b.lastOrder).getTime() - new Date(a.lastOrder).getTime());
+  }, [items, searchQuery]);
+
+  const handleUpdateStatus = async (order: any, amount: number, newStatus: string) => {
+    if (isNaN(amount)) return Alert.alert('Invalid Amount', 'Please enter a valid numeric amount');
+    try {
+      setLoading(true);
+      const remain = order.RemainingAmount !== undefined ? order.RemainingAmount : ((order.Total || 0) - (order.AdvancePayment || 0));
+      const newPaid = (order.AdvancePayment || 0) + amount;
+      const newRemain = Math.max(0, remain - amount);
+      const finalStatus = newRemain <= 0 ? 'complete' : newStatus;
+
+      const payload = {
+        ...order,
+        AdvancePayment: newPaid,
+        RemainingAmount: newRemain,
+        orderStatus: finalStatus,
+        paymentHistory: [
+          ...(order.paymentHistory || []),
+          { amount, orderStatus: finalStatus, date: new Date(), notes: 'Payment recorded from App' }
+        ]
+      };
+
+      const res = await api.patch(`/customers/orders/update/?order_id=${order._id}`, payload);
+      if (res.data.success) {
+        Alert.alert('Success', 'Order updated successfully!');
+        setShowDetail(false);
+        fetchOrders(true);
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to update order');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'complete': return '#2ecc71'; // Green
       case 'progress': return '#f39c12'; // Orange
-      case 'request': 
+      case 'accept': 
       default: return '#3498db'; // Blue
     }
   };
 
-  const renderItem = ({ item }: { item: any }) => {
-    const customer = item.customerId || { name: 'Unknown', phone: 'N/A' };
-    const firstItem = item.items && item.items.length > 0 ? item.items[0] : { itemName: 'Custom Order' };
+  const renderCustomerItem = ({ item }: { item: any }) => (
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+      onPress={() => { setSelectedCustomer(item); setViewMode('history'); }}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+           <View style={[styles.iconBox, { backgroundColor: theme.brand + '15' }]}>
+              <Ionicons name="person" size={24} color={theme.brand} />
+           </View>
+           <View>
+              <Text style={[styles.customerName, { color: theme.text }]}>{item.name}</Text>
+              <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>+91 {item.phone}</Text>
+           </View>
+        </View>
+        <Ionicons name="chevron-forward" size={20} color={theme.icon} />
+      </View>
+      <View style={styles.statsRow}>
+         <View style={styles.statBox}>
+            <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Total Orders</Text>
+            <Text style={[styles.statVal, { color: theme.text }]}>{item.totalOrders}</Text>
+         </View>
+         <View style={styles.statBox}>
+            <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Pending Due</Text>
+            <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {item.totalDue}</Text>
+         </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderOrderItem = ({ item }: { item: any }) => {
     const statusColor = getStatusColor(item.orderStatus);
+    const firstItemName = item.items && item.items.length > 0 ? item.items[0].itemName : 'Custom Order';
 
     return (
-      <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <View style={styles.cardHeader}>
-          <View style={styles.headerLeft}>
-             <View style={[styles.iconBox, { backgroundColor: statusColor + '15' }]}>
-                <Ionicons name="time" size={24} color={statusColor} />
-             </View>
-             <View>
-                <Text style={[styles.customerName, { color: theme.text }]}>{customer.name}</Text>
-                <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>{customer.phone}</Text>
-             </View>
-          </View>
-          <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item)}>
-            <Ionicons name="trash-outline" size={20} color="#e74c3c" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
-
+      <TouchableOpacity 
+        style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+        onPress={() => { setActiveOrder(item); setShowDetail(true); }}
+      >
         <View style={styles.orderInfo}>
-          <Text style={[styles.itemName, { color: theme.text }]}>{firstItem.itemName}</Text>
+          <Text style={[styles.itemName, { color: theme.text }]}>{firstItemName} {item.items.length > 1 ? `(+${item.items.length - 1})` : ''}</Text>
           <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-              <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 12 }}>
-                 {item.orderStatus ? item.orderStatus.toUpperCase() : 'REQUEST'}
+              <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 10 }}>
+                 {item.orderStatus ? item.orderStatus.toUpperCase() : 'ACCEPTED'}
               </Text>
           </View>
         </View>
-        
         <View style={styles.statsRow}>
            <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Total</Text>
-              <Text style={[styles.statVal, { color: theme.text }]}>₹ {item.Total}</Text>
+              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Date</Text>
+              <Text style={[styles.statVal, { color: theme.text, fontSize: 13 }]}>{new Date(item.createdAt).toLocaleDateString()}</Text>
            </View>
            <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Advance</Text>
-              <Text style={[styles.statVal, { color: '#2ecc71' }]}>₹ {item.AdvancePayment}</Text>
-           </View>
-           <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Remaining</Text>
+              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Due</Text>
               <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {item.RemainingAmount}</Text>
            </View>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -135,26 +219,44 @@ export default function Orders() {
       
       {/* Header Actions */}
       <View style={styles.actionContainer}>
-         <TouchableOpacity 
-            style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
-            onPress={() => router.push('/create-order')}
-         >
-            <Ionicons name="add" size={24} color="#fff" />
-            <Text style={styles.addNewText}>New Order</Text>
-         </TouchableOpacity>
+         {viewMode === 'history' ? (
+           <TouchableOpacity 
+              style={[styles.addNewBtn, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}
+              onPress={() => setViewMode('dashboard')}
+           >
+              <Ionicons name="arrow-back" size={20} color={theme.text} />
+              <Text style={[styles.addNewText, { color: theme.text }]}>Back to Customers</Text>
+           </TouchableOpacity>
+         ) : (
+           <TouchableOpacity 
+              style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
+              onPress={() => router.push('/create-order')}
+           >
+              <Ionicons name="add" size={24} color="#000" />
+              <Text style={[styles.addNewText, { color: '#000' }]}>New Order</Text>
+           </TouchableOpacity>
+         )}
       </View>
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={20} color={theme.icon} style={styles.searchIcon} />
-        <TextInput
-          style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
-          placeholder="Search by customer name..."
-          placeholderTextColor="#999"
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
-      </View>
+      {viewMode === 'dashboard' && (
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={20} color={theme.icon} style={styles.searchIcon} />
+          <TextInput
+            style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+            placeholder="Search by customer name..."
+            placeholderTextColor="#999"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+        </View>
+      )}
+
+      {viewMode === 'history' && selectedCustomer && (
+        <View style={styles.customerInfoSection}>
+           <Text style={[styles.historyTitle, { color: theme.text }]}>Orders for {selectedCustomer.name}</Text>
+           <Text style={[styles.historySub, { color: theme.text, opacity: 0.5 }]}>{selectedCustomer.phone} • {selectedCustomer.totalOrders} total orders</Text>
+        </View>
+      )}
 
       {loading ? (
         <View style={styles.center}>
@@ -162,9 +264,9 @@ export default function Orders() {
         </View>
       ) : (
         <FlatList
-          data={items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))}
-          renderItem={renderItem}
-          keyExtractor={(item) => item._id}
+          data={viewMode === 'dashboard' ? customerGroups : selectedCustomer?.orders || []}
+          renderItem={viewMode === 'dashboard' ? renderCustomerItem : renderOrderItem}
+          keyExtractor={(item, index) => item._id || index.toString()}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => fetchOrders(true)} tintColor={theme.brand} />
@@ -172,17 +274,99 @@ export default function Orders() {
           ListEmptyComponent={
             <View style={styles.empty}>
               <Ionicons name="time-outline" size={80} color={theme.icon} style={{ opacity: 0.2 }} />
-              <Text style={[styles.emptyText, { color: theme.text, opacity: 0.5 }]}>No pending orders found</Text>
-              <TouchableOpacity 
-                style={[styles.emptyBtn, { borderColor: theme.brand }]}
-                onPress={() => router.push('/create-order')}
-              >
-                <Text style={{ color: theme.brand, fontWeight: 'bold' }}>Create Order</Text>
-              </TouchableOpacity>
+              <Text style={[styles.emptyText, { color: theme.text, opacity: 0.5 }]}>No records found</Text>
             </View>
           }
         />
       )}
+
+      {/* Order Detail Modal */}
+      <Modal visible={showDetail} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+           <View style={[styles.detailContent, { backgroundColor: theme.card }]}>
+              <View style={styles.modalHeader}>
+                 <Text style={[styles.modalTitle, { color: theme.text }]}>Order Details</Text>
+                 <TouchableOpacity onPress={() => setShowDetail(false)}>
+                   <Ionicons name="close" size={24} color={theme.text} />
+                 </TouchableOpacity>
+              </View>
+
+              <ScrollView>
+                 <View style={styles.detailHeader}>
+                    <Text style={[styles.detName, { color: theme.text }]}>{activeOrder?.items?.[0]?.itemName || 'Custom Order'}</Text>
+                    <Text style={[styles.detSub, { color: theme.text, opacity: 0.5 }]}>Status: {activeOrder?.orderStatus?.toUpperCase()}</Text>
+                 </View>
+
+                 <View style={styles.detailStats}>
+                    <View style={styles.dStat}>
+                       <Text style={styles.dLabel}>Total</Text>
+                       <Text style={[styles.dVal, { color: theme.text }]}>₹{activeOrder?.Total}</Text>
+                    </View>
+                    <View style={styles.dStat}>
+                       <Text style={styles.dLabel}>Due</Text>
+                       <Text style={[styles.dVal, { color: '#e74c3c' }]}>₹{activeOrder?.RemainingAmount}</Text>
+                    </View>
+                 </View>
+
+                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions</Text>
+                 <View style={styles.actionBox}>
+                    <TextInput 
+                      style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
+                      placeholder="Add Payment Amount (₹)" keyboardType="numeric"
+                      onChangeText={setPaymentAmount}
+                    />
+                    <View style={styles.row}>
+                       <TouchableOpacity 
+                         style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
+                         onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), activeOrder.orderStatus)}
+                       >
+                          <Text style={{ fontWeight: 'bold' }}>Update Payment</Text>
+                       </TouchableOpacity>
+                       <TouchableOpacity 
+                         style={[styles.actionBtn, { backgroundColor: '#2ecc71', flex: 1 }]}
+                         onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), 'complete')}
+                       >
+                          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Complete Order</Text>
+                       </TouchableOpacity>
+                    </View>
+                 </View>
+
+                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction History</Text>
+                 <View style={styles.historyList}>
+                    {activeOrder?.paymentHistory?.length > 0 ? (
+                      activeOrder.paymentHistory.map((h: any, i: number) => (
+                        <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
+                           <View>
+                              <Text style={[styles.histAmt, { color: theme.text }]}>₹{h.amount}</Text>
+                              <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>{new Date(h.date).toLocaleString()}</Text>
+                           </View>
+                           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(h.orderStatus) + '15' }]}>
+                              <Text style={{ color: getStatusColor(h.orderStatus), fontSize: 10, fontWeight: 'bold' }}>{h.orderStatus?.toUpperCase()}</Text>
+                           </View>
+                        </View>
+                      ))
+                    ) : (
+                      <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12, fontStyle: 'italic' }}>No transactions recorded yet.</Text>
+                    )}
+                 </View>
+
+                 <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Notes</Text>
+                 <Text style={{ color: theme.text, opacity: 0.7, marginBottom: 20 }}>{activeOrder?.notes || 'No extra notes provided.'}</Text>
+                 
+                 {activeOrder?.image && activeOrder.image.length > 0 && activeOrder.image[0] !== 'placeholder' && (
+                    <View>
+                       <Text style={[styles.sectionTitle, { color: theme.text }]}>Reference Images</Text>
+                       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                          {activeOrder.image.map((img: string, i: number) => (
+                            <Image key={i} source={{ uri: img }} style={{ width: 150, height: 150, borderRadius: 10, marginRight: 10 }} />
+                          ))}
+                       </ScrollView>
+                    </View>
+                 )}
+              </ScrollView>
+           </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -213,5 +397,30 @@ const styles = StyleSheet.create({
   statusBadge: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8 },
   empty: { alignItems: 'center', marginTop: 100 },
   emptyText: { marginTop: 20, fontSize: 16 },
-  emptyBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, borderWidth: 1 }
+  emptyBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, borderWidth: 1 },
+  
+  customerInfoSection: { paddingHorizontal: 20, marginBottom: 10 },
+  historyTitle: { fontSize: 20, fontWeight: 'bold' },
+  historySub: { fontSize: 14, marginTop: 4 },
+
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  detailContent: { backgroundColor: '#fff', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, height: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  modalTitle: { fontSize: 18, fontWeight: 'bold' },
+  detailHeader: { marginBottom: 20 },
+  detName: { fontSize: 22, fontWeight: 'bold' },
+  detSub: { fontSize: 14, marginTop: 4 },
+  detailStats: { flexDirection: 'row', gap: 15, marginBottom: 25 },
+  dStat: { flex: 1, padding: 15, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.03)' },
+  dLabel: { fontSize: 10, opacity: 0.5, marginBottom: 4 },
+  dVal: { fontSize: 16, fontWeight: 'bold' },
+  sectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 15, opacity: 0.8 },
+  actionBox: { marginBottom: 25 },
+  row: { flexDirection: 'row', gap: 10 },
+  input: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 14 },
+  actionBtn: { height: 50, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  historyList: { marginBottom: 10 },
+  historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+  histAmt: { fontSize: 16, fontWeight: 'bold' },
+  histDate: { fontSize: 11, marginTop: 2 }
 });

@@ -8,7 +8,9 @@ import {
   ActivityIndicator, 
   Alert,
   RefreshControl,
-  FlatList
+  FlatList,
+  Modal,
+  TextInput
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Colors } from '../../constants/theme';
@@ -254,7 +256,7 @@ export default function CustomerDetail() {
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Full Name"
                 value={editForm.name}
-                onChangeText={(val) => setEditForm({...editForm, name: val})}
+                onChangeText={(val: string) => setEditForm({...editForm, name: val})}
              />
              
              <Text style={[styles.modalLabel, { color: theme.text }]}>Father/Husband Name</Text>
@@ -262,7 +264,7 @@ export default function CustomerDetail() {
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Father's Name"
                 value={editForm.father_name}
-                onChangeText={(val) => setEditForm({...editForm, father_name: val})}
+                onChangeText={(val: string) => setEditForm({...editForm, father_name: val})}
              />
              
              <Text style={[styles.modalLabel, { color: theme.text }]}>Phone Number *</Text>
@@ -271,7 +273,7 @@ export default function CustomerDetail() {
                 placeholder="10 digit phone"
                 keyboardType="phone-pad"
                 value={editForm.phone}
-                onChangeText={(val) => setEditForm({...editForm, phone: val})}
+                onChangeText={(val: string) => setEditForm({...editForm, phone: val})}
              />
 
              <Text style={[styles.modalLabel, { color: theme.text }]}>Email Address (Optional)</Text>
@@ -280,7 +282,7 @@ export default function CustomerDetail() {
                 placeholder="Email Address"
                 autoCapitalize="none"
                 value={editForm.email}
-                onChangeText={(val) => setEditForm({...editForm, email: val})}
+                onChangeText={(val: string) => setEditForm({...editForm, email: val})}
              />
 
              <Text style={[styles.modalLabel, { color: theme.text }]}>Complete Address</Text>
@@ -289,7 +291,7 @@ export default function CustomerDetail() {
                 placeholder="Street Address"
                 multiline
                 value={editForm.address}
-                onChangeText={(val) => setEditForm({...editForm, address: val})}
+                onChangeText={(val: string) => setEditForm({...editForm, address: val})}
              />
 
               <View style={styles.modalBtns}>

@@ -18,6 +18,7 @@ import { Colors } from '../../../../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../../../../utils/api';
 import { Ionicons, MaterialCommunityIcons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { roundMoney } from '../../../../utils/money';
 
 const { width } = Dimensions.get('window');
 
@@ -27,7 +28,7 @@ const calculateLiveInterest = (item: any) => {
   const days = Math.floor((Date.now() - new Date(item.createdAt).getTime()) / (1000 * 60 * 60 * 24));
   const remain = item.remainingAmount !== undefined ? item.remainingAmount : item.price;
   const interest = (remain * item.interestRate * days) / 3000;
-  return interest;
+  return roundMoney(interest);
 };
 
 export default function CollateralComponent() {
@@ -39,18 +40,19 @@ export default function CollateralComponent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('all'); // all, active, closed
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Calculator State
   const [showCalc, setShowCalc] = useState(false);
-  const [calc, setCalc] = useState({ principal: '', rate: '', days: '' });
+  const [calc, setCalc] = useState({ principal: '', rate: '', startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0] });
   const [calcResult, setCalcResult] = useState<string | null>(null);
 
   // Detail Modal State
   const [showDetail, setShowDetail] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
-  const fetchCollaterals = async (isRefreshing = false) => {
-    if (isRefreshing) setRefreshing(true);
+  const fetchCollaterals = async (isRefresh = false) => {
+    if (isRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
@@ -72,17 +74,92 @@ export default function CollateralComponent() {
   }, []);
 
   const filteredItems = useMemo(() => {
-    if (filter === 'all') return items;
-    return items.filter(i => i.status === filter);
-  }, [items, filter]);
+    let filtered = items;
+    if (filter !== 'all') filtered = filtered.filter(i => i.status === filter);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(i => 
+        (i.customerId?.name || '').toLowerCase().includes(q) || 
+        String(i.phone).includes(q)
+      );
+    }
+    return filtered;
+  }, [items, filter, searchQuery]);
 
   const handleRunCalc = () => {
     const p = parseFloat(calc.principal);
     const r = parseFloat(calc.rate);
-    const d = parseFloat(calc.days);
-    if (!p || !r || !d) return Alert.alert('Invalid', 'Please fill all calculator fields');
-    const res = (p * r * d) / 3000;
-    setCalcResult(res.toFixed(2));
+    const start = new Date(calc.startDate);
+    const end = new Date(calc.endDate);
+    
+    if (!p || !r || isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return Alert.alert('Invalid', 'Please fill all calculator fields correctly');
+    }
+    
+    const days = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+    if (days < 0) return Alert.alert('Invalid', 'End date cannot be before start date');
+    
+    const res = (p * r * days) / 3000;
+    setCalcResult(roundMoney(res).toString());
+  };
+
+  const handleRecordPayment = async (item: any, amount: number, isAdjustment: boolean) => {
+    if (!amount || amount <= 0) return Alert.alert('Error', 'Enter a valid amount');
+    
+    try {
+      setLoading(true);
+      const remain = item.remainingAmount !== undefined ? item.remainingAmount : item.price;
+      const newPaid = (item.totalPaid || 0) + amount;
+      const newRemain = Math.max(0, remain - amount);
+      const newStatus = (isAdjustment || newRemain <= 0) ? 'closed' : 'active';
+
+      const payload = {
+        ...item,
+        totalPaid: newPaid,
+        remainingAmount: newRemain,
+        status: newStatus,
+        paymentHistory: [
+          ...(item.paymentHistory || []),
+          { amount, type: isAdjustment ? 'adjustment' : 'payment', date: new Date(), note: isAdjustment ? 'Negotiated Closure' : 'Regular Payment' }
+        ]
+      };
+
+      const res = await api.patch(`/customers/collatral/update?phone=${item.phone}&collatral_id=${item._id}`, payload);
+      if (res.data.success) {
+        Alert.alert('Success', isAdjustment ? 'Account Closed!' : 'Payment Recorded!');
+        setShowDetail(false);
+        fetchCollaterals(true);
+      }
+    } catch (err: any) {
+      Alert.alert('Error', err.response?.data?.message || 'Failed to update record');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string, phone: string) => {
+    Alert.alert(
+      'Confirm Delete',
+      'Are you sure you want to delete this closed record?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await api.delete(`/customers/collatral/delete?phone=${phone}&collatral_id=${id}`);
+              fetchCollaterals(true);
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete record');
+            } finally {
+              setLoading(false);
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderItem = ({ item }: { item: any }) => {
@@ -106,10 +183,17 @@ export default function CollateralComponent() {
                 <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>+91 {customer.phone}</Text>
              </View>
           </TouchableOpacity>
-          <View style={[styles.statusBadgeSmall, { backgroundColor: item.status === 'active' ? '#2ecc7115' : '#e74c3c15' }]}>
-            <Text style={{ color: item.status === 'active' ? '#2ecc71' : '#e74c3c', fontSize: 10, fontWeight: 'bold' }}>
-              {item.status.toUpperCase()}
-            </Text>
+          <View style={{ alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
+             {item.status === 'closed' && (
+               <TouchableOpacity onPress={() => handleDelete(item._id, item.phone)}>
+                 <Ionicons name="trash-outline" size={20} color="#e74c3c" />
+               </TouchableOpacity>
+             )}
+             <View style={[styles.statusBadgeSmall, { backgroundColor: item.status === 'active' ? '#2ecc7115' : '#e74c3c15' }]}>
+               <Text style={{ color: item.status === 'active' ? '#2ecc71' : '#e74c3c', fontSize: 10, fontWeight: 'bold' }}>
+                 {item.status.toUpperCase()}
+               </Text>
+             </View>
           </View>
         </View>
         
@@ -149,23 +233,16 @@ export default function CollateralComponent() {
   return (
     <View style={styles.container}>
       
-      {/* Header with Calculator & New Girvi */}
-      <View style={styles.topActions}>
-         <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: theme.brand }]}
-            onPress={() => router.push('/create-collateral')}
-         >
-            <Ionicons name="add" size={20} color="#000" />
-            <Text style={styles.actionBtnText}>New Girvi</Text>
-         </TouchableOpacity>
-         
-         <TouchableOpacity 
-            style={[styles.actionBtn, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}
-            onPress={() => setShowCalc(true)}
-         >
-            <Ionicons name="calculator-outline" size={20} color={theme.brand} />
-            <Text style={[styles.actionBtnText, { color: theme.text }]}>Calculator</Text>
-         </TouchableOpacity>
+      {/* Search Bar */}
+      <View style={styles.searchContainer}>
+        <Ionicons name="search" size={20} color={theme.icon} style={styles.searchIcon} />
+        <TextInput
+          style={[styles.searchInput, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
+          placeholder="Search by name or phone..."
+          placeholderTextColor="#999"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
       </View>
 
       {/* Filters */}
@@ -219,24 +296,30 @@ export default function CollateralComponent() {
                    <Ionicons name="close" size={24} color={theme.text} />
                  </TouchableOpacity>
               </View>
-              
               <View style={styles.calcForm}>
-                 <TextInput 
-                    style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                    placeholder="Principal Amount" placeholderTextColor="#999" keyboardType="numeric"
-                    value={calc.principal} onChangeText={(v)=>setCalc({...calc, principal: v})}
-                 />
-                 <TextInput 
-                    style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                    placeholder="Rate % (Monthly)" placeholderTextColor="#999" keyboardType="numeric"
-                    value={calc.rate} onChangeText={(v)=>setCalc({...calc, rate: v})}
-                 />
-                 <TextInput 
-                    style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                    placeholder="Number of Days" placeholderTextColor="#999" keyboardType="numeric"
-                    value={calc.days} onChangeText={(v)=>setCalc({...calc, days: v})}
-                 />
-              </View>
+                  <TextInput 
+                     style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                     placeholder="Principal Amount" placeholderTextColor="#999" keyboardType="numeric"
+                     value={calc.principal} onChangeText={(v)=>setCalc({...calc, principal: v})}
+                  />
+                  <TextInput 
+                     style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                     placeholder="Rate % (Monthly)" placeholderTextColor="#999" keyboardType="numeric"
+                     value={calc.rate} onChangeText={(v)=>setCalc({...calc, rate: v})}
+                  />
+                  <View style={{ flexDirection: 'row', gap: 10 }}>
+                    <TextInput 
+                        style={[styles.calcInput, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                        placeholder="Start Date (YYYY-MM-DD)" placeholderTextColor="#999"
+                        value={calc.startDate} onChangeText={(v)=>setCalc({...calc, startDate: v})}
+                    />
+                    <TextInput 
+                        style={[styles.calcInput, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                        placeholder="End Date (YYYY-MM-DD)" placeholderTextColor="#999"
+                        value={calc.endDate} onChangeText={(v)=>setCalc({...calc, endDate: v})}
+                    />
+                  </View>
+               </View>
 
               {calcResult && (
                 <View style={styles.resultBox}>
@@ -246,7 +329,7 @@ export default function CollateralComponent() {
               )}
 
               <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.brand }]} onPress={handleRunCalc}>
-                 <Text style={{ fontWeight: 'bold', color: '#000' }}>CALCULATE 30/3000 RULE</Text>
+                 <Text style={{ fontWeight: 'bold', color: '#000' }}>CALCULATE</Text>
               </TouchableOpacity>
            </View>
         </View>
@@ -300,14 +383,29 @@ export default function CollateralComponent() {
                  )}
               </ScrollView>
 
-              <View style={styles.detailBtns}>
-                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}>
-                    <Text style={{ fontWeight: 'bold' }}>Record Payment</Text>
-                 </TouchableOpacity>
-                 <TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#e74c3c', flex: 1 }]} onPress={() => Alert.alert('Coming Soon', 'Account closure logic...')}>
-                    <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Account</Text>
-                 </TouchableOpacity>
-              </View>
+                  <View style={styles.paymentInputBox}>
+                    <Text style={[styles.modalLabel, { color: theme.text }]}>Record Payment (₹)</Text>
+                    <TextInput 
+                      style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                      placeholder="Enter Amount" keyboardType="numeric"
+                      onChangeText={(v) => { if(selectedItem) selectedItem.tempAmount = v; }}
+                    />
+                  </View>
+
+                  <View style={styles.detailBtns}>
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
+                      onPress={() => handleRecordPayment(selectedItem, parseFloat(selectedItem?.tempAmount || '0'), false)}
+                    >
+                       <Text style={{ fontWeight: 'bold' }}>Record Pay</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, { backgroundColor: '#e74c3c', flex: 1 }]} 
+                      onPress={() => handleRecordPayment(selectedItem, parseFloat(selectedItem?.tempAmount || '0'), true)}
+                    >
+                       <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Account</Text>
+                    </TouchableOpacity>
+                  </View>
            </View>
         </View>
       </Modal>
@@ -322,6 +420,9 @@ const styles = StyleSheet.create({
   topActions: { flexDirection: 'row', gap: 12, padding: 20, paddingBottom: 10 },
   actionBtn: { height: 50, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 20 },
   actionBtnText: { fontWeight: 'bold', fontSize: 14 },
+  searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginTop: 10 },
+  searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
+  searchInput: { flex: 1, height: 50, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 15 },
 
   filterRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginVertical: 10 },
   filterTab: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
@@ -368,5 +469,7 @@ const styles = StyleSheet.create({
   dVal: { fontSize: 14, fontWeight: 'bold' },
   sectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 15, opacity: 0.8 },
   historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
-  detailBtns: { flexDirection: 'row', gap: 12, marginTop: 25 }
+  paymentInputBox: { marginTop: 20 },
+  modalLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, opacity: 0.6 },
+  detailBtns: { flexDirection: 'row', gap: 12, marginTop: 20 }
 });

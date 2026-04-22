@@ -25,7 +25,7 @@ export default function TabTwoScreen() {
         <ThemedText
           type="title"
           style={{
-            fontFamily: Fonts.rounded,
+            fontFamily: Fonts.bold,
           }}>
           Explore
         </ThemedText>

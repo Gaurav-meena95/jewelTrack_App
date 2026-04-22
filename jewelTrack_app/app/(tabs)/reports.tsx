@@ -8,7 +8,7 @@ import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import { Paths, File } from 'expo-file-system';
 
 const { width } = Dimensions.get('window');
 const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
@@ -47,6 +47,7 @@ export default function Reports() {
       });
     } catch (e) {
       console.log('Report Fetch Error:', e);
+      Alert.alert('Data Error', 'Failed to fetch business intelligence data');
     } finally {
       setLoading(false);
     }
@@ -110,10 +111,14 @@ export default function Reports() {
     ];
 
     const csvString = rows.map(e => e.join(",")).join("\n");
-    const filePath = `${FileSystem.documentDirectory}JewelTrack_Report_${dateRange}.csv`;
+    if (!Paths.document.uri) {
+      Alert.alert('Error', 'Storage not accessible');
+      return;
+    }
+    const filePath = Paths.join(Paths.document, `JewelTrack_Report_${dateRange}.csv`);
     
     try {
-      await FileSystem.writeAsStringAsync(filePath, csvString);
+      new File(filePath).write(csvString);
       await Sharing.shareAsync(filePath, { mimeType: 'text/csv', dialogTitle: 'Export Ledger Report' });
     } catch (err) {
       Alert.alert('Export Error', 'Failed to generate CSV file');

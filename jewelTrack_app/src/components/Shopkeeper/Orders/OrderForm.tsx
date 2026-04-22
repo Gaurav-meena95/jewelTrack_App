@@ -22,10 +22,14 @@ export default function CreateOrder() {
   const theme = Colors[colorScheme];
   
   const [loading, setLoading] = useState(false);
-  const [customers, setCustomers] = useState<any[]>([]);
   const [presets, setPresets] = useState({ itemNames: [] as string[] });
+
+  // Customer Lookup State
+  const [lookupPhone, setLookupPhone] = useState('');
+  const [customerFound, setCustomerFound] = useState<boolean | null>(null);
+  const [customerData, setCustomerData] = useState({ name: '', father_name: '', address: '' });
+  const [isRegistered, setIsRegistered] = useState(false);
   
-  const [selectedCustomer, setSelectedCustomer] = useState('');
   const [cart, setCart] = useState<any[]>([]);
   const [currentItem, setCurrentItem] = useState({
     itemName: '',
@@ -41,11 +45,7 @@ export default function CreateOrder() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [custRes, profRes] = await Promise.all([
-          api.get('/customers/register/get'),
-          api.get('/auth/me')
-        ]);
-        setCustomers(custRes.data?.data?.customer || []);
+        const profRes = await api.get('/auth/me');
         if (profRes.data?.success) {
           setPresets({ itemNames: profRes.data.data.user.itemNames || [] });
         }
@@ -53,6 +53,29 @@ export default function CreateOrder() {
     };
     init();
   }, []);
+
+  const handleLookup = async () => {
+    if (lookupPhone.length < 10) return Alert.alert('Invalid', 'Enter valid 10-digit phone');
+    setLoading(true);
+    try {
+      const res = await api.get(`/customers/register/get?phone=${lookupPhone}`);
+      if (res.data?.data?.customer) {
+        setCustomerFound(true);
+        setCustomerData({
+          name: res.data.data.customer.name,
+          father_name: res.data.data.customer.father_name || '',
+          address: res.data.data.customer.address || ''
+        });
+        setIsRegistered(true);
+      } else {
+        setCustomerFound(false);
+        setCustomerData({ name: '', father_name: '', address: '' });
+        setIsRegistered(false);
+      }
+    } catch (e) {
+      setCustomerFound(false);
+    } finally { setLoading(false); }
+  };
 
   const addItem = () => {
     if (!currentItem.itemName) return Alert.alert('Required', 'Item Name is needed.');
@@ -75,8 +98,21 @@ export default function CreateOrder() {
   };
 
   const handleSubmit = async () => {
-    if (!selectedCustomer || cart.length === 0 || !payment.total) {
-      return Alert.alert('Error', 'Ensure Customer, Items and Total are filled.');
+    if (!customerFound && !isRegistered) {
+       // Register first if not found
+       if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
+       try {
+         setLoading(true);
+         await api.post('/customers/register', { ...customerData, phone: lookupPhone });
+         setIsRegistered(true);
+       } catch(e) {
+         setLoading(false);
+         return Alert.alert('Error', 'Failed to register customer');
+       }
+    }
+
+    if (cart.length === 0 || !payment.total) {
+      return Alert.alert('Error', 'Ensure Items and Total are filled.');
     }
 
     setLoading(true);
@@ -89,7 +125,7 @@ export default function CreateOrder() {
         deliveryDate: payment.deliveryDate || new Date().toISOString()
       };
 
-      const res = await api.post(`/customers/orders/create?phone=${selectedCustomer}`, payload);
+      const res = await api.post(`/customers/orders/create?phone=${lookupPhone}`, payload);
       if (res.data.success) {
         Alert.alert('Success', 'Order successfully booked! ⏱️');
         router.back();
@@ -109,12 +145,40 @@ export default function CreateOrder() {
         </View>
 
         <View style={styles.content}>
-           <Text style={[styles.label, { color: theme.text }]}>SELECT CUSTOMER *</Text>
-           <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Picker selectedValue={selectedCustomer} onValueChange={setSelectedCustomer} style={{ color: theme.text }}>
-                 <Picker.Item label="Select Customer" value="" />
-                 {customers.map(c => <Picker.Item key={c._id} label={`${c.name} (${c.phone})`} value={c.phone} />)}
-              </Picker>
+           {/* CUSTOMER LOOKUP */}
+           <View style={[styles.lookupBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+              <Text style={[styles.label, { color: theme.text }]}>CUSTOMER PHONE</Text>
+              <View style={styles.row}>
+                <TextInput 
+                  style={[styles.input, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                  placeholder="Enter phone number" keyboardType="phone-pad" maxLength={10}
+                  value={lookupPhone} onChangeText={setLookupPhone}
+                />
+                <TouchableOpacity style={[styles.lookupBtn, { backgroundColor: theme.brand }]} onPress={handleLookup}>
+                   <Ionicons name="search" size={20} color="#000" />
+                </TouchableOpacity>
+              </View>
+
+              {customerFound === true && (
+                <View style={styles.foundBox}>
+                   <Ionicons name="checkmark-circle" size={20} color="#2ecc71" />
+                   <Text style={{ color: theme.text, fontWeight: 'bold' }}>{customerData.name}</Text>
+                </View>
+              )}
+
+              {customerFound === false && (
+                <View style={styles.regBox}>
+                   <Text style={{ color: theme.text, fontSize: 12, marginBottom: 10, opacity: 0.7 }}>New Customer! Please enter details:</Text>
+                   <TextInput 
+                     style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
+                     placeholder="Full Name *" value={customerData.name} onChangeText={(v)=>setCustomerData({...customerData, name: v})} 
+                   />
+                   <TextInput 
+                     style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
+                     placeholder="Father's Name" value={customerData.father_name} onChangeText={(v)=>setCustomerData({...customerData, father_name: v})} 
+                   />
+                </View>
+              )}
            </View>
 
            <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
@@ -227,5 +291,10 @@ const styles = StyleSheet.create({
   imgThumb: { width: 90, height: 90, borderRadius: 20, marginRight: 10 },
   bottomSection: { marginTop: 20, gap: 15 },
   finalBtn: { height: 65, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginTop: 20 },
-  finalBtnText: { fontSize: 17, fontWeight: 'bold', color: '#000' }
+  finalBtnText: { fontSize: 17, fontWeight: 'bold', color: '#000' },
+
+  lookupBox: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+  lookupBtn: { width: 55, height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  foundBox: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 15, padding: 12, borderRadius: 12, backgroundColor: 'rgba(46, 204, 113, 0.1)' },
+  regBox: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' }
 });

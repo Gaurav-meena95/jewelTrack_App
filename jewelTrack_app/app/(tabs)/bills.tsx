@@ -29,6 +29,7 @@ export default function Bills() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<'customers' | 'all'>('customers'); // Added viewMode
 
   // Payment Modal State
   const [paymentModalVisible, setPaymentModalVisible] = useState(false);
@@ -54,6 +55,49 @@ export default function Bills() {
       setRefreshing(false);
     }
   };
+
+  // Derived unique customers data (matching reference functionality)
+  const uniqueCustomers = React.useMemo(() => {
+    const customerMap: Record<string, any> = {};
+    items.forEach(bill => {
+      if (!bill.customerId || !bill.customerId._id) return;
+      const custId = bill.customerId._id;
+      if (!customerMap[custId]) {
+        customerMap[custId] = {
+          _id: custId,
+          name: bill.customerId.name,
+          phone: bill.customerId.phone,
+          totalBills: 0,
+          totalPaid: 0,
+          totalDue: 0,
+          lastPurchase: bill.createdAt,
+          bills: []
+        };
+      }
+      const c = customerMap[custId];
+      c.totalBills += 1;
+      c.totalPaid += bill.payment?.amountPaid || 0;
+      c.totalDue += bill.payment?.remainingAmount || 0;
+      if (new Date(bill.createdAt) > new Date(c.lastPurchase)) {
+        c.lastPurchase = bill.createdAt;
+      }
+      c.bills.push(bill);
+    });
+
+    let list = Object.values(customerMap);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter(c => c.name.toLowerCase().includes(q) || String(c.phone).includes(q));
+    }
+    return list.sort((a, b) => new Date(b.lastPurchase).getTime() - new Date(a.lastPurchase).getTime());
+  }, [items, searchQuery]);
+
+  const metrics = React.useMemo(() => {
+    const total = items.reduce((sum, b) => sum + (b.invoice?.grandTotal || 0), 0);
+    const due = items.reduce((sum, b) => sum + (b.payment?.remainingAmount || 0), 0);
+    const count = items.length;
+    return { total, due, count };
+  }, [items]);
 
   useEffect(() => {
     fetchBills();
@@ -216,47 +260,51 @@ export default function Bills() {
              </View>
              <View>
                 <Text style={[styles.customerName, { color: theme.text }]}>{customer.name}</Text>
-                <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>
-                  {new Date(item.createdAt).toLocaleDateString()}
+                <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.5 }]}>
+                  {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </Text>
              </View>
           </View>
-          <View style={{ alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
-             <TouchableOpacity style={{ padding: 5, marginTop: -5 }} onPress={() => printBill(item)}>
-               <Ionicons name="print-outline" size={22} color={theme.text} style={{ opacity: 0.7 }} />
-             </TouchableOpacity>
-             <View style={{ alignItems: 'flex-end' }}>
-               <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(2)}</Text>
-               <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-                   <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 10 }}>
-                      {payment.paymentStatus.replace('_', ' ').toUpperCase()}
-                   </Text>
-               </View>
+          <View style={{ alignItems: 'flex-end' }}>
+             <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(0)}</Text>
+             <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+                 <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 9 }}>
+                    {payment.paymentStatus.replace('_', ' ').toUpperCase()}
+                 </Text>
              </View>
           </View>
         </View>
 
-        <View style={[styles.divider, { backgroundColor: theme.border }]} />
+        {/* Receipt Divider Effect */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginVertical: 15 }}>
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.background, marginLeft: -25 }} />
+          <View style={{ flex: 1, height: 1, borderStyle: 'dashed', borderWidth: 1, borderColor: theme.border, borderRadius: 1 }} />
+          <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: theme.background, marginRight: -25 }} />
+        </View>
 
         <View style={styles.orderInfo}>
-          <Text style={[styles.itemName, { color: theme.text }]}>{firstItem.itemName} {item.invoice?.items.length > 1 ? `+${item.invoice.items.length - 1} more` : ''}</Text>
+          <Ionicons name="sparkles" size={14} color={theme.brand} style={{ marginRight: 5 }} />
+          <Text style={[styles.itemName, { color: theme.text, flex: 1 }]}>{firstItem.itemName} {item.invoice?.items.length > 1 ? `+${item.invoice.items.length - 1} more items` : ''}</Text>
+          <TouchableOpacity style={{ padding: 5 }} onPress={() => printBill(item)}>
+             <Ionicons name="share-outline" size={20} color={theme.text} style={{ opacity: 0.5 }} />
+          </TouchableOpacity>
         </View>
         
         <View style={styles.statsRow}>
            <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Paid</Text>
-              <Text style={[styles.statVal, { color: '#2ecc71' }]}>₹ {payment.amountPaid.toFixed(2)}</Text>
+              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>PAID</Text>
+              <Text style={[styles.statVal, { color: '#2ecc71' }]}>₹ {payment.amountPaid.toFixed(0)}</Text>
            </View>
            <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.5 }]}>Balance Due</Text>
-              <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {payment.remainingAmount.toFixed(2)}</Text>
+              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>DUE</Text>
+              <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {payment.remainingAmount.toFixed(0)}</Text>
            </View>
            {payment.paymentStatus !== 'paid' && (
              <TouchableOpacity 
-               style={[styles.payBtn, { borderColor: theme.brand }]} 
+               style={[styles.payBtn, { backgroundColor: theme.brand }]} 
                onPress={() => openPaymentModal(item)}
              >
-               <Text style={{ color: theme.brand, fontWeight: 'bold', fontSize: 12 }}>Add Pay</Text>
+               <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 11 }}>RECEIVE</Text>
              </TouchableOpacity>
            )}
         </View>
@@ -264,18 +312,87 @@ export default function Bills() {
     );
   };
 
+  const renderCustomerItem = ({ item }: { item: any }) => (
+    <TouchableOpacity 
+      style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
+      onPress={() => {
+        setSearchQuery(item.phone);
+        setViewMode('all');
+      }}
+    >
+      <View style={styles.cardHeader}>
+        <View style={styles.headerLeft}>
+          <View style={[styles.iconBox, { backgroundColor: theme.brand + '15' }]}>
+            <Ionicons name="person" size={24} color={theme.brand} />
+          </View>
+          <View>
+            <Text style={[styles.customerName, { color: theme.text }]}>{item.name}</Text>
+            <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>{item.phone}</Text>
+          </View>
+        </View>
+        <View style={{ alignItems: 'flex-end' }}>
+          <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {item.totalDue.toLocaleString()}</Text>
+          <Text style={{ fontSize: 10, color: item.totalDue > 0 ? '#e74c3c' : '#2ecc71', fontWeight: 'bold' }}>
+            {item.totalDue > 0 ? 'TOTAL DUE' : 'FULLY PAID'}
+          </Text>
+        </View>
+      </View>
+      <View style={[styles.divider, { backgroundColor: theme.border, marginVertical: 10 }]} />
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+        <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>{item.totalBills} Invoices</Text>
+        <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Last: {new Date(item.lastPurchase).toLocaleDateString()}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      
+      {/* Header Summary */}
+      {!loading && viewMode === 'customers' && (
+        <View style={styles.statsHeader}>
+          <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+             <Text style={[styles.miniLabel, { color: theme.text }]}>SALES</Text>
+             <Text style={[styles.miniVal, { color: theme.text }]}>₹{(metrics.total / 1000).toFixed(1)}k</Text>
+          </View>
+          <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+             <Text style={[styles.miniLabel, { color: theme.text }]}>PENDING</Text>
+             <Text style={[styles.miniVal, { color: '#e74c3c' }]}>₹{(metrics.due / 1000).toFixed(1)}k</Text>
+          </View>
+          <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+             <Text style={[styles.miniLabel, { color: theme.text }]}>BILLS</Text>
+             <Text style={[styles.miniVal, { color: theme.brand }]}>{metrics.count}</Text>
+          </View>
+        </View>
+      )}
+
       {/* Header Actions */}
       <View style={styles.actionContainer}>
          <TouchableOpacity 
             style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
             onPress={() => router.push('/create-bill')}
          >
-            <Ionicons name="add" size={24} color="#fff" />
-            <Text style={styles.addNewText}>Generate Invoice</Text>
+            <Ionicons name="add" size={24} color="#000" />
+            <Text style={[styles.addNewText, { color: '#000' }]}>Create Invoice</Text>
          </TouchableOpacity>
+      </View>
+
+      {/* View Switcher - Segmented Control Style */}
+      <View style={[styles.tabSwitcher, { backgroundColor: theme.card, borderColor: theme.border }]}>
+        <TouchableOpacity 
+          style={[styles.tab, viewMode === 'customers' && { backgroundColor: theme.brand }]}
+          onPress={() => setViewMode('customers')}
+        >
+          <Text style={[styles.tabText, { color: viewMode === 'customers' ? '#000' : theme.text, opacity: viewMode === 'customers' ? 1 : 0.5 }]}>CUSTOMERS</Text>
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={[styles.tab, viewMode === 'all' && { backgroundColor: theme.brand }]}
+          onPress={() => {
+            setViewMode('all');
+            setSearchQuery('');
+          }}
+        >
+          <Text style={[styles.tabText, { color: viewMode === 'all' ? '#000' : theme.text, opacity: viewMode === 'all' ? 1 : 0.5 }]}>ALL BILLS</Text>
+        </TouchableOpacity>
       </View>
 
       {/* Search Bar */}
@@ -296,8 +413,11 @@ export default function Bills() {
         </View>
       ) : (
         <FlatList
-          data={items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))}
-          renderItem={renderItem}
+          data={viewMode === 'customers' 
+            ? uniqueCustomers 
+            : items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
+          }
+          renderItem={viewMode === 'customers' ? renderCustomerItem : renderItem}
           keyExtractor={(item) => item._id}
           contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
           refreshControl={
@@ -321,14 +441,40 @@ export default function Bills() {
       <Modal visible={paymentModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
            <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
-             <Text style={[styles.modalTitle, { color: theme.text }]}>Record Payment</Text>
+             <Text style={[styles.modalTitle, { color: theme.text }]}>Invoice Details</Text>
              {selectedBill && (
-                 <Text style={{ color: theme.text, marginBottom: 15, opacity: 0.7 }}>
-                     Pending: ₹ {selectedBill.payment.remainingAmount.toFixed(2)}
-                 </Text>
-             )}
+                 <View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                        <Text style={{ color: theme.text, opacity: 0.6 }}>Total Amount</Text>
+                        <Text style={{ color: theme.text, fontWeight: 'bold' }}>₹ {selectedBill.invoice.grandTotal.toFixed(2)}</Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                        <Text style={{ color: theme.text, opacity: 0.6 }}>Remaining Due</Text>
+                        <Text style={{ color: '#e74c3c', fontWeight: 'bold' }}>₹ {selectedBill.payment.remainingAmount.toFixed(2)}</Text>
+                    </View>
+                    
+                    <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 10 }]}>Transaction History</Text>
+                    <ScrollView style={{ maxHeight: 120, marginBottom: 20 }}>
+                       {selectedBill?.paymentHistory?.length > 0 ? (
+                          selectedBill.paymentHistory.map((h: any, i: number) => (
+                            <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
+                               <View>
+                                  <Text style={[styles.histAmt, { color: theme.text }]}>₹{h.amount}</Text>
+                                  <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>{new Date(h.date).toLocaleString()}</Text>
+                               </View>
+                               <View style={[styles.statusBadge, { backgroundColor: theme.brand + '15', marginTop: 0 }]}>
+                                  <Text style={{ color: theme.brand, fontSize: 10, fontWeight: 'bold' }}>{h.method?.toUpperCase()}</Text>
+                                </View>
+                            </View>
+                          ))
+                       ) : (
+                          <Text style={{ color: theme.text, opacity: 0.4, fontSize: 12, fontStyle: 'italic', paddingVertical: 10 }}>No previous payments recorded.</Text>
+                       )}
+                    </ScrollView>
+                 </View>
+              )}
 
-             <Text style={[styles.modalLabel, { color: theme.text }]}>Amount to Receive (₹)</Text>
+              <Text style={[styles.modalLabel, { color: theme.text, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 15 }]}>Amount to Receive (₹)</Text>
              <TextInput 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="0.00"
@@ -382,37 +528,49 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   actionContainer: { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 10 },
   addNewBtn: { height: 60, borderRadius: 20, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, elevation: 4 },
-  addNewText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
-  searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10 },
+  addNewText: { fontSize: 16, fontWeight: 'bold' },
+  statsHeader: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 20 },
+  miniStat: { flex: 1, padding: 15, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
+  miniLabel: { fontSize: 10, fontWeight: 'bold', opacity: 0.5, marginBottom: 5 },
+  miniVal: { fontSize: 18, fontWeight: 'bold' },
+
+  searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginBottom: 10, marginTop: 10 },
   searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
   searchInput: { flex: 1, height: 50, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 15 },
+  tabSwitcher: { flexDirection: 'row', marginHorizontal: 20, padding: 5, borderRadius: 15, borderWidth: 1, marginBottom: 15 },
+  tab: { flex: 1, paddingVertical: 10, borderRadius: 12, alignItems: 'center' },
+  tabText: { fontSize: 11, fontWeight: 'bold' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  card: { padding: 20, borderRadius: 20, marginBottom: 15, borderWidth: 1 },
-  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
+  card: { padding: 20, borderRadius: 25, marginBottom: 15, borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconBox: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  customerName: { fontSize: 16, fontWeight: 'bold' },
-  customerPhone: { fontSize: 12, marginTop: 4 },
-  totalAmt: { fontSize: 18, fontWeight: 'bold' },
+  iconBox: { width: 48, height: 48, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  customerName: { fontSize: 17, fontWeight: 'bold' },
+  customerPhone: { fontSize: 12, marginTop: 2 },
+  totalAmt: { fontSize: 19, fontWeight: 'bold' },
   divider: { height: 1, width: '100%', marginBottom: 15, opacity: 0.5 },
   orderInfo: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  itemName: { fontSize: 14, fontWeight: '600' },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
+  itemName: { fontSize: 15, fontWeight: '600' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   statBox: { alignItems: 'flex-start' },
-  statLabel: { fontSize: 11, marginBottom: 4 },
-  statVal: { fontSize: 15, fontWeight: 'bold' },
-  statusBadge: { paddingVertical: 4, paddingHorizontal: 10, borderRadius: 6, marginTop: 5 },
-  payBtn: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 10, borderWidth: 1 },
+  statLabel: { fontSize: 10, marginBottom: 4, fontWeight: 'bold' },
+  statVal: { fontSize: 16, fontWeight: 'bold' },
+  statusBadge: { paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8, marginTop: 5 },
+  payBtn: { paddingVertical: 8, paddingHorizontal: 15, borderRadius: 12, borderWidth: 1 },
   empty: { alignItems: 'center', marginTop: 100 },
   emptyText: { marginTop: 20, fontSize: 16 },
   emptyBtn: { marginTop: 20, paddingVertical: 12, paddingHorizontal: 30, borderRadius: 10, borderWidth: 1 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { width: '100%', padding: 25, borderRadius: 20, borderWidth: 1 },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 5 },
+  sectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 15, opacity: 0.8 },
+  historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
+  histAmt: { fontSize: 16, fontWeight: 'bold' },
+  histDate: { fontSize: 11, marginTop: 2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  modalContent: { width: '100%', padding: 25, borderTopLeftRadius: 30, borderTopRightRadius: 30, borderWidth: 1, height: '80%' },
+  modalTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 20 },
   modalLabel: { fontSize: 13, fontWeight: 'bold', marginBottom: 8, marginTop: 10 },
-  modalInput: { padding: 15, borderRadius: 12, borderWidth: 1, fontSize: 15 },
-  pickerContainer: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', height: 50, justifyContent: 'center', marginBottom: 20 },
-  modalBtns: { flexDirection: 'row', gap: 15, marginTop: 10 },
-  modalCloseBtn: { flex: 1, padding: 15, borderRadius: 12, borderWidth: 1, alignItems: 'center' },
-  modalSubmitBtn: { flex: 1, padding: 15, borderRadius: 12, alignItems: 'center' }
+  modalInput: { padding: 18, borderRadius: 15, borderWidth: 1, fontSize: 16 },
+  pickerContainer: { borderRadius: 15, borderWidth: 1, overflow: 'hidden', height: 60, justifyContent: 'center', marginBottom: 20 },
+  modalBtns: { flexDirection: 'row', gap: 15, marginTop: 15 },
+  modalCloseBtn: { flex: 1, padding: 18, borderRadius: 15, borderWidth: 1, alignItems: 'center' },
+  modalSubmitBtn: { flex: 1, padding: 18, borderRadius: 15, alignItems: 'center' }
 });
