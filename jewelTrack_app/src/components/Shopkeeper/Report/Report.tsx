@@ -114,14 +114,14 @@ export default function ReportComponent() {
     }
   };
 
-  const ReportCard = ({ title, value, subValue, icon, color }: any) => (
-    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
+  const ReportCard = ({ title, value, subValue, icon, color, isMini }: any) => (
+    <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }, !isMini && { flexDirection: 'row', gap: 20 }]}>
        <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
-          <Ionicons name={icon} size={28} color={color} />
+          <Ionicons name={icon} size={isMini ? 24 : 28} color={color} />
        </View>
-       <View style={{ flex: 1 }}>
+       <View style={{ flex: 1, alignItems: isMini ? 'center' : 'flex-start' }}>
           <Text style={[styles.cardTitle, { color: theme.text }]}>{title.toUpperCase()}</Text>
-          <Text style={[styles.cardVal, { color: theme.text }]}>{value}</Text>
+          <Text style={[styles.cardVal, { color: theme.text, fontSize: isMini ? 18 : 22 }]}>{value}</Text>
           {subValue && <Text style={[styles.cardSub, { color: color }]}>{subValue}</Text>}
        </View>
     </View>
@@ -161,10 +161,30 @@ export default function ReportComponent() {
           contentContainerStyle={styles.reportList}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => fetchData(true)} tintColor={theme.brand} />}
         >
-           <ReportCard title="Sales Revenue" value={`₹ ${filteredMetrics.revenue.toLocaleString()}`} subValue="Gross Earnings" icon="cash-outline" color="#2ecc71" />
-           <ReportCard title="Customer Orders" value={filteredMetrics.ordersPlaced} subValue={`₹${filteredMetrics.advanceCollected} Advance Collected`} icon="time-outline" color="#f1c40f" />
-           <ReportCard title="Girvi Exposure" value={filteredMetrics.activeGirvi} subValue={`₹${filteredMetrics.loanValue.toLocaleString()} Principal Out`} icon="shield-checkmark-outline" color="#e74c3c" />
-           <ReportCard title="Inventory SKU" value={rawData.inventory.length} subValue={`${rawData.inventory.filter(i => (i.quantity||0)<=5).length} Low Stock Alerts`} icon="cube-outline" color="#3498db" />
+            <View style={[styles.heroCard, { backgroundColor: theme.brand }]}>
+               <Text style={styles.heroLabel}>GROSS REVENUE</Text>
+               <Text style={styles.heroVal}>₹ {filteredMetrics.revenue.toLocaleString()}</Text>
+               <View style={styles.heroFooter}>
+                  <View style={styles.trendBox}>
+                     <Ionicons name="trending-up" size={14} color="#000" />
+                     <Text style={styles.trendText}>+12.5%</Text>
+                  </View>
+                  <Text style={styles.heroSub}>vs previous period</Text>
+               </View>
+            </View>
+
+            <View style={styles.metricsGrid}>
+               <View style={{ flex: 1, gap: 15 }}>
+                  <ReportCard title="Orders" value={filteredMetrics.ordersPlaced} subValue="New Bookings" icon="cart" color="#f1c40f" isMini />
+                  <ReportCard title="Advance" value={`₹${filteredMetrics.advanceCollected}`} subValue="Cash Flow" icon="wallet" color="#2ecc71" isMini />
+               </View>
+               <View style={{ flex: 1, gap: 15 }}>
+                  <ReportCard title="Active Girvi" value={filteredMetrics.activeGirvi} subValue="Security" icon="shield" color="#e74c3c" isMini />
+                  <ReportCard title="Portfolio" value={`₹${(filteredMetrics.loanValue/1000).toFixed(1)}k`} subValue="Assets" icon="briefcase" color="#3498db" isMini />
+               </View>
+            </View>
+
+            <ReportCard title="Inventory Health" value={`${rawData.inventory.length} Items`} subValue={`${rawData.inventory.filter(i => (i.quantity||0)<=5).length} Critical Alerts`} icon="cube" color={theme.brand} />
         </ScrollView>
       )}
     </View>
@@ -178,9 +198,18 @@ const styles = StyleSheet.create({
   filterBtn: { paddingHorizontal: 15, height: 35, borderRadius: 10, borderWidth: 1, justifyContent: 'center' },
   shareBtn: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   reportList: { paddingHorizontal: 20, gap: 15, paddingBottom: 100 },
-  card: { flexDirection: 'row', padding: 20, borderRadius: 25, borderWidth: 1, alignItems: 'center', gap: 20 },
-  iconBox: { width: 60, height: 60, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  cardTitle: { fontSize: 10, fontWeight: 'bold', opacity: 0.5, letterSpacing: 1 },
-  cardVal: { fontSize: 22, fontWeight: 'bold', marginTop: 4 },
-  cardSub: { fontSize: 11, fontWeight: 'bold', marginTop: 4 }
+  heroCard: { padding: 25, borderRadius: 30, marginBottom: 10, elevation: 8, shadowColor: '#d2a907', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.3, shadowRadius: 20 },
+  heroLabel: { fontSize: 9, fontWeight: 'bold', color: '#000', opacity: 0.6, letterSpacing: 1.5 },
+  heroVal: { fontSize: 32, fontWeight: 'bold', color: '#000', marginTop: 8 },
+  heroFooter: { flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 10 },
+  trendBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.1)', paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8, gap: 3 },
+  trendText: { fontSize: 9, fontWeight: 'bold', color: '#000' },
+  heroSub: { fontSize: 10, color: '#000', opacity: 0.5 },
+
+  metricsGrid: { flexDirection: 'row', gap: 12 },
+  card: { padding: 18, borderRadius: 25, borderWidth: 1, alignItems: 'center', gap: 12 },
+  iconBox: { width: 45, height: 45, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  cardTitle: { fontSize: 8, fontWeight: 'bold', opacity: 0.5, letterSpacing: 1 },
+  cardVal: { fontSize: 16, fontWeight: 'bold', marginTop: 2 },
+  cardSub: { fontSize: 9, fontWeight: 'bold', marginTop: 2 }
 });

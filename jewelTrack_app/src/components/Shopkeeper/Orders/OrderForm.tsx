@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Image, Dimensions 
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors, Fonts } from '../../../../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../../../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,8 +13,7 @@ import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 
 const { width } = Dimensions.get('window');
-const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const FONT_BOLD = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
+
 
 export default function CreateOrder() {
   const router = useRouter();
@@ -56,10 +55,12 @@ export default function CreateOrder() {
 
   const handleLookup = async () => {
     if (lookupPhone.length < 10) return Alert.alert('Invalid', 'Enter valid 10-digit phone');
+    console.log('[OrderForm] Looking up customer:', lookupPhone);
     setLoading(true);
     try {
       const res = await api.get(`/customers/register/get?phone=${lookupPhone}`);
       if (res.data?.data?.customer) {
+        console.log('[OrderForm] Customer found:', res.data.data.customer.name);
         setCustomerFound(true);
         setCustomerData({
           name: res.data.data.customer.name,
@@ -68,11 +69,13 @@ export default function CreateOrder() {
         });
         setIsRegistered(true);
       } else {
+        console.log('[OrderForm] Customer not found for:', lookupPhone);
         setCustomerFound(false);
         setCustomerData({ name: '', father_name: '', address: '' });
         setIsRegistered(false);
       }
     } catch (e) {
+      console.log('[OrderForm] Customer lookup FAILED —', e);
       setCustomerFound(false);
     } finally { setLoading(false); }
   };
@@ -99,13 +102,15 @@ export default function CreateOrder() {
 
   const handleSubmit = async () => {
     if (!customerFound && !isRegistered) {
-       // Register first if not found
        if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
        try {
+         console.log('[OrderForm] Registering new customer:', lookupPhone);
          setLoading(true);
          await api.post('/customers/register', { ...customerData, phone: lookupPhone });
+         console.log('[OrderForm] Customer registered SUCCESS');
          setIsRegistered(true);
        } catch(e) {
+         console.log('[OrderForm] Customer register FAILED —', e);
          setLoading(false);
          return Alert.alert('Error', 'Failed to register customer');
        }
@@ -115,6 +120,7 @@ export default function CreateOrder() {
       return Alert.alert('Error', 'Ensure Items and Total are filled.');
     }
 
+    console.log('[OrderForm] Creating order for:', lookupPhone, '| items:', cart.length);
     setLoading(true);
     try {
       const payload = {
@@ -127,10 +133,12 @@ export default function CreateOrder() {
 
       const res = await api.post(`/customers/orders/create?phone=${lookupPhone}`, payload);
       if (res.data.success) {
+        console.log('[OrderForm] SUCCESS — order ID:', res.data.data?.order?._id);
         Alert.alert('Success', 'Order successfully booked! ⏱️');
         router.back();
       }
     } catch (e: any) {
+      console.log('[OrderForm] FAILED —', e.response?.data?.message || e.message);
       Alert.alert('Error', e.response?.data?.message || 'Failed to create order');
     } finally { setLoading(false); }
   };
@@ -140,7 +148,7 @@ export default function CreateOrder() {
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
         
         <View style={styles.header}>
-          <Text style={[styles.headerTitle, { color: theme.text, fontFamily: FONT_BOLD }]}>Book Custom Order</Text>
+          <Text style={[styles.headerTitle, { color: theme.text, fontFamily: Fonts.bold }]}>Book Custom Order</Text>
           <Text style={[styles.headerSub, { color: theme.text }]}>🛒 {cart.length} Patterns added</Text>
         </View>
 
@@ -182,7 +190,7 @@ export default function CreateOrder() {
            </View>
 
            <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
-              <Text style={[styles.formTitle, { color: theme.brand, fontFamily: FONT_BOLD }]}>Item Specifications</Text>
+              <Text style={[styles.formTitle, { color: theme.brand, fontFamily: Fonts.bold }]}>Item Specifications</Text>
               
               <Text style={[styles.label, { color: theme.text }]}>ORDER ITEM</Text>
               <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
@@ -226,7 +234,7 @@ export default function CreateOrder() {
            {cart.map((i, idx) => (
              <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border }]}>
                 <View style={{ flex: 1 }}>
-                   <Text style={[styles.cartItemName, { color: theme.text, fontFamily: FONT_BOLD }]}>{i.itemName} ({i.metal})</Text>
+                   <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{i.itemName} ({i.metal})</Text>
                    <Text style={[styles.cartItemSub, { color: theme.text }]}>{i.weight}g est. • {i.description || 'No notes'}</Text>
                 </View>
                 <TouchableOpacity onPress={() => removeItem(idx)}><Ionicons name="close-circle" size={24} color="#e74c3c" /></TouchableOpacity>

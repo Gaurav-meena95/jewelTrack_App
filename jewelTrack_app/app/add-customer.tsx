@@ -59,24 +59,24 @@ export default function AddCustomer() {
   }, []);
 
   const handleSubmit = async () => {
-    // Basic validation
     if (!form.name || !form.phone || !form.father_name || !form.address) {
       return Alert.alert('Missing Fields', 'Please fill all required (*) fields');
     }
-
     if (form.phone.length !== 10) {
       return Alert.alert('Invalid Phone', 'Phone number must be exactly 10 digits');
     }
 
+    console.log('[AddCustomer] Registering customer:', form.phone);
     setLoading(true);
     try {
       const response = await api.post('/customers/register', form);
       if (response.data.success) {
+        console.log('[AddCustomer] SUCCESS — customer:', form.name);
         Alert.alert('Success', 'Customer registered successfully! 👤');
         router.back();
       }
     } catch (error: any) {
-      console.log('Register Error:', error.response?.data || error.message);
+      console.log('[AddCustomer] FAILED —', error.response?.data?.message || error.message);
       const errorMessage = error.response?.data?.message || 'Failed to register customer. Please try again.';
       Alert.alert('Registration Failed', errorMessage);
     } finally {

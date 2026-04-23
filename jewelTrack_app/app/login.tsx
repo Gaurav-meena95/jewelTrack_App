@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useColorScheme, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import api from '../utils/api';
+import axios from 'axios';
+import { BASE_URL } from '../utils/api';
 import { saveToken, saveUser } from '../utils/auth';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
@@ -17,13 +18,18 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!form.identifier || !form.password) return Alert.alert('Error', 'Please fill all the fields');
+    console.log('[Login] Attempting login for:', form.identifier);
     setLoading(true);
     try {
-      const res = await api.post('/auth/login', form);
+      const res = await axios.post(`${BASE_URL}/auth/login`, form, {
+        headers: { 'Content-Type': 'application/json' },
+      });
+      console.log('[Login] SUCCESS — user:', res.data.data.user?.email);
       await saveToken(res.data.data.token, res.data.data.refreshToken);
       await saveUser(res.data.data.user);
       router.replace('/(tabs)');
     } catch (error: any) {
+      console.log('[Login] FAILED —', error.response?.data?.message || error.message);
       Alert.alert('Login Failed', error.response?.data?.message || 'Invalid Credentials');
     } finally {
       setLoading(false);

@@ -14,21 +14,16 @@ const createInventory = async (req, res) => {
         if (value) {
             return res.status(403).json({ success: false, message: `Check missing value ${value}` })
         }
-        const existing = await Inventory.findOne({
-            shopkeeperId: shopkeeper_id,
-            jewelleryType: jewelleryType.trim()
-        })
-
+        const existing = await Inventory.findOne({ shopkeeperId: shopkeeper_id, jewelleryType: jewelleryType.trim() })
         if (existing) {
             return res.status(400).json({ success: false, message: "Inventory already exists for this jewellery type" })
         }
         const newInventory = await Inventory.create({ shopkeeperId: shopkeeper_id, jewelleryType, totalWeight, quantity, metalType })
+        console.log('[Inventory] Created —', jewelleryType, '| qty:', quantity)
         return res.status(200).json({ success: true, message: 'Inventory create successfully', data: { newInventory } })
-
     } catch (error) {
-        console.log(error)
+        console.log('[Inventory] createInventory ERROR —', error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
-
     }
 }
 
@@ -40,19 +35,19 @@ const updateInventory = async (req, res) => {
         if (value) {
             return res.status(403).json({ success: false, message: `Check missing value ${value}` })
         }
-
         const exsitingInventory = await Inventory.find({ _id: inventory_id })
         const updated = await Inventory.updateOne(
             { _id: exsitingInventory[0]._id },
             { jewelleryType, totalWeight, quantity, metalType }
         )
+        console.log('[Inventory] Updated — ID:', inventory_id)
         return res.status(200).json({ success: true, message: "Inventory upadate successfully", data: { updated } })
     } catch (error) {
-        console.log(error)
+        console.log('[Inventory] updateInventory ERROR —', error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
-
 }
+
 const deleteInventory = async (req, res) => {
     try {
         const { inventory_id } = req.query
@@ -60,31 +55,28 @@ const deleteInventory = async (req, res) => {
         if (exsitingInventory.length === 0) {
             return res.status(401).json({ success: false, message: 'Inventory does not exist' })
         }
-
         const deleted = await Inventory.deleteOne({ _id: exsitingInventory[0]._id })
+        console.log('[Inventory] Deleted — ID:', inventory_id)
         return res.status(200).json({ success: true, message: 'Inventory successfully deleted', data: { deleted } })
     } catch (error) {
-        console.log(error)
+        console.log('[Inventory] deleteInventory ERROR —', error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
-
 }
+
 const allInventory = async (req, res) => {
     try {
         if (!req.user || !req.user.id) {
             return res.status(401).json({ success: false, message: 'Unauthorized' })
         }
         const shopkeeper_id = req.user.id
-        const Shopkeeper = await User.find({ _id: shopkeeper_id })
         const allInventorys = await Inventory.find({ shopkeeperId: shopkeeper_id })
+        console.log('[Inventory] Fetched', allInventorys.length, 'items')
         return res.status(200).json({ success: true, message: "All Inventory are :", data: { allInventorys } })
-
-
     } catch (error) {
-        console.log(error)
+        console.log('[Inventory] allInventory ERROR —', error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
-
 }
 
 

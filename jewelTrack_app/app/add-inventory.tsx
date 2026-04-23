@@ -25,6 +25,7 @@ export default function AddInventory() {
       return Alert.alert('Missing Fields', 'Please fill all fields');
     }
 
+    console.log('[AddInventory] Adding stock:', form.jewelleryType);
     setLoading(true);
     try {
       const payload = {
@@ -35,11 +36,12 @@ export default function AddInventory() {
 
       const res = await api.post('/shops/inventory/create', payload);
       if (res.data.success) {
+        console.log('[AddInventory] SUCCESS —', form.jewelleryType);
         Alert.alert('Success', 'Stock added to inventory! 📦');
         router.back();
       }
     } catch (error: any) {
-      console.log('Stock Add Error:', error.response?.data || error.message);
+      console.log('[AddInventory] FAILED —', error.response?.data?.message || error.message);
       Alert.alert('Error', error.response?.data?.message || 'Failed to add stock');
     } finally {
       setLoading(false);

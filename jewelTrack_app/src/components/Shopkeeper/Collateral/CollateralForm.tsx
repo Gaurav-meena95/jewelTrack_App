@@ -57,18 +57,22 @@ export default function CreateCollateral() {
 
   const checkCustomer = async () => {
     if (customerPhone.length < 10) return;
+    console.log('[CollateralForm] Looking up customer:', customerPhone);
     setLoading(true);
     try {
       const res = await api.get(`/customers/register/get?phone=${customerPhone}`);
       if (res.data?.data && res.data.data.customer) {
+        console.log('[CollateralForm] Customer found:', res.data.data.customer.name);
         setCustomerFound(true);
         const c = res.data.data.customer;
         setCustomerData({ name: c.name || '', father_name: c.father_name || '', address: c.address || '', email: c.email || '' });
       } else {
+        console.log('[CollateralForm] Customer not found for:', customerPhone);
         setCustomerFound(false);
         setCustomerData({ name: '', father_name: '', address: '', email: '' });
       }
     } catch (err) {
+      console.log('[CollateralForm] Customer lookup FAILED —', err);
       setCustomerFound(false);
     } finally {
       setLoading(false);
@@ -77,6 +81,7 @@ export default function CreateCollateral() {
 
   const saveCustomer = async () => {
     if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
+    console.log('[CollateralForm] Saving customer:', customerPhone);
     setLoading(true);
     try {
       const payload = { phone: customerPhone, ...customerData };
@@ -85,8 +90,10 @@ export default function CreateCollateral() {
       } else {
         await api.post('/customers/register', payload);
       }
+      console.log('[CollateralForm] Customer save SUCCESS');
       Alert.alert('Success', 'Customer details saved!');
     } catch (err: any) {
+      console.log('[CollateralForm] Customer save FAILED —', err.response?.data?.message || err.message);
       Alert.alert('Error', err.response?.data?.message || 'Failed to save customer');
     } finally {
       setLoading(false);
@@ -116,13 +123,15 @@ export default function CreateCollateral() {
         image: images
       };
 
+      console.log('[CollateralForm] Creating collateral for:', customerPhone);
       const res = await api.post(`/customers/collatral/create?phone=${customerPhone}`, payload);
       if (res.data.success) {
+        console.log('[CollateralForm] SUCCESS — collateral ID:', res.data.data?.newCollatral?._id);
         Alert.alert('Success', 'Collateral (Girvi) created successfully! 💍');
         router.back();
       }
     } catch (error: any) {
-      console.log('Collateral Create Error:', error.response?.data || error.message);
+      console.log('[CollateralForm] FAILED —', error.response?.data?.message || error.message);
       Alert.alert('Error', error.response?.data?.message || 'Failed to create collateral');
     } finally {
       setLoading(false);

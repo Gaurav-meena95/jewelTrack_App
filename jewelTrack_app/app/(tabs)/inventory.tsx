@@ -1,6 +1,6 @@
 import React from 'react';
-import ReportComponent from '../../src/components/Shopkeeper/Report/Report';
+import InventoryComponent from '../../src/components/Shopkeeper/Inventory/Inventory';
 
-export default function ReportsPage() {
-  return <ReportComponent />;
+export default function InventoryPage() {
+  return <InventoryComponent />;
 }

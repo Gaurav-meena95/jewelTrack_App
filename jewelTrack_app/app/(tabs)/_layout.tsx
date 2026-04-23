@@ -43,7 +43,7 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="collateral" // Pehle customers tha, ab collateral hai
+        name="collateral" 
         options={{
           title: 'Collateral',
           tabBarIcon: ({ color, focused }) => (

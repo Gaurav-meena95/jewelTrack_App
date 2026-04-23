@@ -4,15 +4,14 @@ import {
   TouchableOpacity, useColorScheme, ActivityIndicator, 
   Dimensions, Platform, Alert 
 } from 'react-native';
-import { Colors } from '../../constants/theme';
+import { Colors, Fonts } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import * as Sharing from 'expo-sharing';
-import { Paths, File } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system';
 
 const { width } = Dimensions.get('window');
-const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const FONT_BOLD = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
+
 
 export default function Reports() {
   const colorScheme = useColorScheme() ?? 'light';
@@ -88,6 +87,15 @@ export default function Reports() {
       lowStock: inventory.filter((i: any) => (i.quantity || 0) <= 5).length
     };
   }, [filteredData]);
+ 
+  const recentActivities = useMemo(() => {
+    const all = [
+      ...filteredData.bills.map(b => ({ ...b, type: 'bill', date: new Date(b.createdAt) })),
+      ...filteredData.orders.map(o => ({ ...o, type: 'order', date: new Date(o.createdAt) })),
+      ...filteredData.collaterals.map(c => ({ ...c, type: 'girvi', date: new Date(c.createdAt) }))
+    ];
+    return all.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [filteredData]);
 
   const exportCSV = async () => {
     const rows = [
@@ -111,16 +119,13 @@ export default function Reports() {
     ];
 
     const csvString = rows.map(e => e.join(",")).join("\n");
-    if (!Paths.document.uri) {
-      Alert.alert('Error', 'Storage not accessible');
-      return;
-    }
-    const filePath = Paths.join(Paths.document, `JewelTrack_Report_${dateRange}.csv`);
+    const filePath = `${FileSystem.documentDirectory}JewelTrack_Report_${dateRange}.csv`;
     
     try {
-      new File(filePath).write(csvString);
+      await FileSystem.writeAsStringAsync(filePath, csvString, { encoding: 'utf8' });
       await Sharing.shareAsync(filePath, { mimeType: 'text/csv', dialogTitle: 'Export Ledger Report' });
     } catch (err) {
+      console.log('Export Error:', err);
       Alert.alert('Export Error', 'Failed to generate CSV file');
     }
   };
@@ -131,9 +136,9 @@ export default function Reports() {
         <View style={[styles.iconBox, { backgroundColor: color + '15' }]}>
           <Ionicons name={icon} size={22} color={color} />
         </View>
-        <Text style={[styles.cardTitle, { color: theme.text, fontFamily: FONT_BOLD }]}>{title}</Text>
+        <Text style={[styles.cardTitle, { color: theme.text, fontFamily: Fonts.bold }]}>{title}</Text>
       </View>
-      <Text style={[styles.cardValue, { color: theme.text, fontFamily: FONT_BOLD }]}>{value}</Text>
+      <Text style={[styles.cardValue, { color: theme.text, fontFamily: Fonts.bold }]}>{value}</Text>
       {subLabel && (
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 10, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 10 }}>
           <Text style={{ fontSize: 11, color: theme.text, opacity: 0.5 }}>{subLabel}</Text>
@@ -190,6 +195,36 @@ export default function Reports() {
         />
       </View>
 
+      {/* RECENT ACTIVITY LOG */}
+      <Text style={[styles.sectionTitle, { color: theme.text, fontFamily: Fonts.bold, marginTop: 40 }]}>Recent Transactions</Text>
+      <View style={styles.activityList}>
+        {recentActivities.map((item, index) => (
+          <View key={index} style={[styles.activityItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+             <View style={[styles.activityIcon, { backgroundColor: theme.background }]}>
+                <Ionicons 
+                   name={item.type === 'bill' ? 'receipt' : item.type === 'order' ? 'time' : 'shield-checkmark'} 
+                   size={18} 
+                   color={item.type === 'bill' ? '#2ecc71' : item.type === 'order' ? '#3498db' : '#e74c3c'} 
+                />
+             </View>
+             <View style={{ flex: 1 }}>
+                <Text style={[styles.actTitle, { color: theme.text, fontFamily: Fonts.bold }]}>
+                   {item.type === 'bill' ? 'Invoice Generated' : item.type === 'order' ? 'Custom Order Booked' : 'Girvi Asset Locked'}
+                </Text>
+                <Text style={[styles.actSub, { color: theme.text, opacity: 0.5 }]}>
+                   {item.customerId?.name || 'Walk-in Client'} • {item.date.toLocaleDateString()}
+                </Text>
+             </View>
+             <View style={{ alignItems: 'flex-end' }}>
+                <Text style={[styles.actAmount, { color: theme.text, fontFamily: Fonts.bold }]}>
+                   ₹{(item.type === 'bill' ? (item.invoice?.grandTotal ?? 0) : (item.price ?? item.Total ?? 0)).toLocaleString()}
+                </Text>
+                <Text style={[styles.actStatus, { color: item.status === 'completed' ? '#2ecc71' : theme.brand }]}>{item.status || 'Success'}</Text>
+             </View>
+          </View>
+        ))}
+      </View>
+
       <TouchableOpacity style={[styles.mainExportBtn, { backgroundColor: theme.brand }]} onPress={exportCSV}>
         <Ionicons name="share-outline" size={20} color="#000" />
         <Text style={styles.mainExportText}>Share Full Intelligence Report</Text>
@@ -211,6 +246,16 @@ const styles = StyleSheet.create({
   iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   cardTitle: { fontSize: 15 },
   cardValue: { fontSize: 28 },
-  mainExportBtn: { flexDirection: 'row', height: 65, borderRadius: 20, justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 30, elevation: 4 },
-  mainExportText: { fontSize: 16, fontWeight: 'bold' }
+  cardValue: { fontSize: 28 },
+  mainExportBtn: { flexDirection: 'row', height: 65, borderRadius: 20, justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 40, elevation: 4 },
+  mainExportText: { fontSize: 16, fontWeight: 'bold' },
+
+  sectionTitle: { fontSize: 15, fontWeight: 'bold', marginBottom: 15, letterSpacing: 0.5 },
+  activityList: { gap: 10 },
+  activityItem: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, borderWidth: 1, gap: 12, borderColor: 'transparent' },
+  activityIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  actTitle: { fontSize: 13, letterSpacing: 0.2 },
+  actSub: { fontSize: 10, marginTop: 2, opacity: 0.6 },
+  actAmount: { fontSize: 14 },
+  actStatus: { fontSize: 9, fontWeight: 'bold', textTransform: 'uppercase', marginTop: 2 }
 });

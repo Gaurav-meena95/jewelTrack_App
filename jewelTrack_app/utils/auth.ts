@@ -1,9 +1,9 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-export const saveToken = async (accessToken: string, refreshToken: string) => {
+export const saveToken = async (accessToken: string | undefined, refreshToken: string | undefined) => {
     try {
-        await AsyncStorage.setItem('x-access-token', accessToken);
-        await AsyncStorage.setItem('x-refresh-token', refreshToken);
+        if (accessToken) await AsyncStorage.setItem('x-access-token', accessToken);
+        if (refreshToken) await AsyncStorage.setItem('x-refresh-token', refreshToken);
         console.log("Tokens saved successfully");
     } catch (error) {
         console.log("Error saving tokens", error);

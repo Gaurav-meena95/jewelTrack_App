@@ -12,8 +12,7 @@ import { useRouter } from 'expo-router';
 import api from '../../utils/api';
 import { saveUser, clearTokens } from '../../utils/auth';
 
-const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const FONT_BOLD = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
+import { Fonts } from '../../constants/theme';
 
 export default function Settings() {
   const router = useRouter();
@@ -126,10 +125,10 @@ export default function Settings() {
         <Ionicons name={icon} size={20} color={color} />
       </View>
       <View style={{ flex: 1 }}>
-        <Text style={[styles.actionLabel, { color: theme.text, fontFamily: FONT_BOLD }]}>{label}</Text>
+        <Text style={[styles.actionLabel, { color: theme.text, fontFamily: Fonts.medium }]}>{label}</Text>
         {value && <Text style={[styles.actionValue, { color: theme.text }]}>{value}</Text>}
       </View>
-      {onPress && <Ionicons name="chevron-forward" size={16} color={theme.icon} style={{ opacity: 0.3 }} />}
+      {onPress && <Ionicons name="chevron-forward" size={14} color={theme.icon} style={{ opacity: 0.3 }} />}
     </TouchableOpacity>
   );
 
@@ -148,12 +147,12 @@ export default function Settings() {
       {/* PROFILE HEADER */}
       <View style={styles.header}>
         <View style={[styles.avatar, { backgroundColor: theme.brand + '15', borderColor: theme.brand }]}>
-          <Text style={[styles.avatarText, { color: theme.brand, fontFamily: FONT_BOLD }]}>
+          <Text style={[styles.avatarText, { color: theme.brand, fontFamily: Fonts.bold }]}>
             {user?.name?.charAt(0).toUpperCase() || 'J'}
           </Text>
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={[styles.shopName, { color: theme.text, fontFamily: FONT_BOLD }]}>{user?.shopName}</Text>
+          <Text style={[styles.shopName, { color: theme.text, fontFamily: Fonts.bold }]}>{user?.shopName}</Text>
           <Text style={[styles.ownerName, { color: theme.text }]}>{user?.name} • Pro Merchant</Text>
         </View>
       </View>
@@ -163,6 +162,13 @@ export default function Settings() {
         <ActionItem icon="person-outline" label="Business Profile" value="Name, Email, Shop" color="#d2a907" onPress={() => setProfileModalVisible(true)} />
         <ActionItem icon="lock-closed-outline" label="Security" value="Update Password" color="#e74c3c" onPress={() => setProfileModalVisible(true)} />
         <ActionItem icon="call-outline" label="Contact verified" value={user?.phone} color="#2ecc71" last />
+      </SettingSection>
+
+      {/* FEEDBACK & SUPPORT */}
+      <SettingSection title="Feedback & Support">
+        <ActionItem icon="chatbubble-ellipses-outline" label="Request a Feature" value="Tell us what's missing" color="#3498db" onPress={() => Alert.alert('Feature Request', 'Send your suggestions to support@jeweltrack.com')} />
+        <ActionItem icon="bug-outline" label="Report a Bug" value="Help us improve" color="#e67e22" onPress={() => Alert.alert('Report Bug', 'Our engineers are ready! Please email details to tech@jeweltrack.com')} />
+        <ActionItem icon="star-outline" label="Rate JewelTrack" value="Love using the app?" color="#f1c40f" last onPress={() => Alert.alert('Rating', 'Redirecting to App Store...')} />
       </SettingSection>
 
       {/* BUSINESS PRESETS (Mirror of Web CustomOptionsSection) */}
@@ -223,7 +229,7 @@ export default function Settings() {
       <Modal visible={profileModalVisible} transparent animationType="slide">
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
            <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
-              <Text style={[styles.modalTitle, { color: theme.text, fontFamily: FONT_BOLD }]}>Edit Business Identity</Text>
+              <Text style={[styles.modalTitle, { color: theme.text, fontFamily: Fonts.bold }]}>Edit Business Identity</Text>
               
               <View style={styles.modalForm}>
                 <TextInput style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Shop Name" value={form.shopName} onChangeText={(v)=>setForm({...form, shopName: v})} />
@@ -246,42 +252,42 @@ export default function Settings() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20 },
-  header: { flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 30, gap: 15 },
-  avatar: { width: 66, height: 66, borderRadius: 33, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
-  avatarText: { fontSize: 28 },
-  shopName: { fontSize: 20 },
-  ownerName: { fontSize: 13, opacity: 0.5 },
+  header: { flexDirection: 'row', alignItems: 'center', marginTop: 40, marginBottom: 30, gap: 12 },
+  avatar: { width: 60, height: 60, borderRadius: 30, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+  avatarText: { fontSize: 24 },
+  shopName: { fontSize: 18 },
+  ownerName: { fontSize: 11, opacity: 0.5, marginTop: 2 },
 
-  section: { marginBottom: 25 },
-  sectionTitle: { fontSize: 11, fontWeight: 'bold', marginBottom: 12, marginLeft: 5, letterSpacing: 1 },
-  sectionCard: { borderRadius: 22, overflow: 'hidden' },
+  section: { marginBottom: 20 },
+  sectionTitle: { fontSize: 10, fontWeight: 'bold', marginBottom: 10, marginLeft: 5, letterSpacing: 1 },
+  sectionCard: { borderRadius: 20, overflow: 'hidden' },
 
-  actionItem: { flexDirection: 'row', alignItems: 'center', padding: 18, gap: 15 },
-  actionIcon: { width: 38, height: 38, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
-  actionLabel: { fontSize: 14 },
-  actionValue: { fontSize: 12, opacity: 0.4, marginTop: 2 },
+  actionItem: { flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 },
+  actionIcon: { width: 35, height: 35, borderRadius: 10, justifyContent: 'center', alignItems: 'center' },
+  actionLabel: { fontSize: 13 },
+  actionValue: { fontSize: 11, opacity: 0.4, marginTop: 2 },
 
-  presetBox: { padding: 20 },
-  presetTitle: { fontSize: 13, fontWeight: 'bold', marginBottom: 15 },
-  tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 15 },
-  tag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, gap: 6 },
-  tagText: { fontSize: 12 },
+  presetBox: { padding: 18 },
+  presetTitle: { fontSize: 12, fontWeight: 'bold', marginBottom: 12 },
+  tagCloud: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
+  tag: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 20, borderWidth: 1, gap: 5 },
+  tagText: { fontSize: 11 },
   tagRemove: { marginLeft: 2 },
   inlineAdd: { flexDirection: 'row', gap: 10 },
-  inlineInput: { flex: 1, height: 45, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
-  inlineBtn: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  inlineInput: { flex: 1, height: 42, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 12 },
+  inlineBtn: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   divider: { height: 1 },
 
-  saveBtn: { flexDirection: 'row', height: 60, borderRadius: 20, justifyContent: 'center', alignItems: 'center', gap: 10, elevation: 4 },
-  saveBtnText: { fontSize: 16, fontWeight: 'bold' },
-  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 30, padding: 20, gap: 10 },
-  logoutText: { color: '#e74c3c', fontWeight: 'bold' },
+  saveBtn: { flexDirection: 'row', height: 55, borderRadius: 20, justifyContent: 'center', alignItems: 'center', gap: 10, elevation: 4 },
+  saveBtnText: { fontSize: 15, fontWeight: 'bold' },
+  logoutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 20, padding: 15, gap: 10 },
+  logoutText: { color: '#e74c3c', fontWeight: 'bold', fontSize: 13 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalContent: { borderRadius: 25, padding: 25, borderWidth: 1 },
-  modalTitle: { fontSize: 18, marginBottom: 20 },
+  modalTitle: { fontSize: 16, marginBottom: 20 },
   modalForm: { gap: 12, marginBottom: 25 },
-  modalInput: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15 },
+  modalInput: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
   modalBtns: { flexDirection: 'row', gap: 15 },
-  mBtn: { flex: 1, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1 }
+  mBtn: { flex: 1, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center', borderWidth: 1 }
 });

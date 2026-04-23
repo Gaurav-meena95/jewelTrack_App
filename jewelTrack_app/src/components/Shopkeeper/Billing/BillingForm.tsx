@@ -15,8 +15,7 @@ import api from '../../../../utils/api';
 import { roundMoney, roundWeight } from '../../../../utils/money';
 
 const { width } = Dimensions.get('window');
-const FONT = Platform.select({ ios: 'System', android: 'sans-serif', default: 'System' });
-const FONT_BOLD = Platform.select({ ios: 'System', android: 'sans-serif-medium', default: 'System' });
+import { Fonts } from '../../../../constants/theme';
 
 export default function CreateBill() {
   const router = useRouter();
@@ -74,19 +73,23 @@ export default function CreateBill() {
 
   const checkCustomer = async () => {
     if (customerPhone.length < 10) return;
+    console.log('[BillingForm] Looking up customer:', customerPhone);
     setLoading(true);
     try {
       const res = await api.get(`/customers/register/get?phone=${customerPhone}`);
       if (res.data?.data && res.data.data.customer) {
+        console.log('[BillingForm] Customer found:', res.data.data.customer.name);
         setCustomerFound(true);
         const c = res.data.data.customer;
         setCustomerData({ name: c.name || '', father_name: c.father_name || '', address: c.address || '', email: c.email || '' });
         setSelectedCustomer(customerPhone);
       } else {
+        console.log('[BillingForm] Customer not found for:', customerPhone);
         setCustomerFound(false);
         setCustomerData({ name: '', father_name: '', address: '', email: '' });
       }
     } catch (err) {
+      console.log('[BillingForm] Customer lookup FAILED —', err);
       setCustomerFound(false);
     } finally {
       setLoading(false);
@@ -95,6 +98,7 @@ export default function CreateBill() {
 
   const saveCustomer = async () => {
     if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
+    console.log('[BillingForm] Saving customer:', customerPhone, '| found:', customerFound);
     setLoading(true);
     try {
       const payload = { phone: customerPhone, ...customerData };
@@ -103,9 +107,11 @@ export default function CreateBill() {
       } else {
         await api.post('/customers/register', payload);
       }
+      console.log('[BillingForm] Customer save SUCCESS');
       setSelectedCustomer(customerPhone);
       Alert.alert('Success', 'Customer details saved!');
     } catch (err: any) {
+      console.log('[BillingForm] Customer save FAILED —', err.response?.data?.message || err.message);
       Alert.alert('Error', err.response?.data?.message || 'Failed to save customer');
     } finally {
       setLoading(false);
@@ -154,6 +160,7 @@ export default function CreateBill() {
     if (!selectedCustomer) return Alert.alert('Error', 'Select a customer first.');
     if (cart.length === 0) return Alert.alert('Error', 'Cart is empty.');
 
+    console.log('[CreateBill] Submitting bill for customer:', selectedCustomer, '| items:', cart.length);
     setLoading(true);
     try {
       const payload = {
@@ -172,10 +179,12 @@ export default function CreateBill() {
 
       const res = await api.post(`/customers/bills/create?phone=${selectedCustomer}`, payload);
       if (res.data.success) {
+        console.log('[CreateBill] SUCCESS — bill ID:', res.data.data?.Bill?._id);
         Alert.alert('Success', 'Premium Invoice Generated! 🧾');
         router.back();
       }
     } catch (e: any) {
+      console.log('[CreateBill] FAILED —', e.response?.data?.message || e.message);
       Alert.alert('Error', e.response?.data?.message || 'Failed to create bill');
     } finally {
       setLoading(false);
@@ -189,7 +198,7 @@ export default function CreateBill() {
         {/* HEADER BAR */}
         <View style={[styles.stickyHeader, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
           <View>
-            <Text style={[styles.headerTitle, { color: theme.text, fontFamily: FONT_BOLD }]}>New Invoice</Text>
+            <Text style={[styles.headerTitle, { color: theme.text, fontFamily: Fonts.bold }]}>New Invoice</Text>
             <Text style={[styles.headerSub, { color: theme.text }]}>🛒 {cart.length} Items in cart</Text>
           </View>
           <View style={styles.totalBadge}>
@@ -245,7 +254,7 @@ export default function CreateBill() {
 
            {/* ADD ITEM FORM */}
            <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
-              <Text style={[styles.formTitle, { color: theme.brand, fontFamily: FONT_BOLD }]}>Add Jewelry Item</Text>
+              <Text style={[styles.formTitle, { color: theme.brand, fontFamily: Fonts.bold }]}>Add Jewelry Item</Text>
               
               <Text style={[styles.label, { color: theme.text }]}>ITEM NAME (Preset or Custom)</Text>
               <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
@@ -313,18 +322,16 @@ export default function CreateBill() {
 
            {/* CART LIST */}
            <View style={styles.cartSection}>
-              {cart.map((item, idx) => (
-                <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border }]}>
-                   <View style={{ flex: 1 }}>
-                      <Text style={[styles.cartItemName, { color: theme.text, fontFamily: FONT_BOLD }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
-                      <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
-                   </View>
-                   <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: FONT_BOLD }]}>₹{item.finalPrice.toFixed(0)}</Text>
-                   <TouchableOpacity onPress={() => removeItem(idx)} style={styles.removeBtn}>
-                      <Ionicons name="trash-outline" size={18} color="#e74c3c" />
-                   </TouchableOpacity>
-                </View>
-              ))}
+                 <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+                    <View style={{ flex: 1 }}>
+                       <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
+                       <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
+                    </View>
+                    <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
+                    <TouchableOpacity onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
+                       <Ionicons name="trash-outline" size={18} color="#e74c3c" />
+                    </TouchableOpacity>
+                 </View>
            </View>
 
            {/* IMAGES */}
@@ -377,45 +384,45 @@ export default function CreateBill() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   stickyHeader: { padding: 20, paddingTop: 60, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, zIndex: 10 },
-  headerTitle: { fontSize: 20 },
-  headerSub: { fontSize: 12, opacity: 0.5 },
+  headerTitle: { fontSize: 18, letterSpacing: 0.5 },
+  headerSub: { fontSize: 11, opacity: 0.5, marginTop: 2 },
   lookupRow: { flexDirection: 'row', gap: 10 },
-  checkBtn: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  checkBtn: { width: 48, height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   saveCustBtn: { height: 45, borderRadius: 12, borderWidth: 1, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
-  totalBadge: { backgroundColor: '#d2a907', paddingHorizontal: 15, paddingVertical: 8, borderRadius: 20 },
-  totalBadgeVal: { color: '#000', fontWeight: 'bold' },
+  totalBadge: { backgroundColor: '#d2a907', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
+  totalBadgeVal: { color: '#000', fontWeight: 'bold', fontSize: 13 },
 
-  content: { padding: 20 },
+  content: { padding: 18 },
   section: { marginBottom: 20 },
-  label: { fontSize: 10, fontWeight: 'bold', marginBottom: 8, letterSpacing: 1, opacity: 0.6 },
-  pickerBox: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', height: 50, justifyContent: 'center' },
-  input: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 14 },
+  label: { fontSize: 9, fontWeight: 'bold', marginBottom: 8, letterSpacing: 1, opacity: 0.6 },
+  pickerBox: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', height: 48, justifyContent: 'center' },
+  input: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
   
-  lookupBox: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+  lookupBox: { padding: 18, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
   foundBox: { flexDirection: 'row', alignItems: 'center', gap: 15, marginTop: 15, padding: 15, borderRadius: 15, backgroundColor: 'rgba(46, 204, 113, 0.1)' },
   regBox: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
   
-  itemForm: { padding: 20, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
-  formTitle: { fontSize: 18, marginBottom: 20 },
+  itemForm: { padding: 18, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
+  formTitle: { fontSize: 16, marginBottom: 18 },
   row: { flexDirection: 'row', gap: 12, marginBottom: 15 },
-  addBtn: { height: 55, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 10 },
-  addBtnText: { fontWeight: 'bold', color: '#000' },
+  addBtn: { height: 50, borderRadius: 15, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, marginTop: 5 },
+  addBtnText: { fontWeight: 'bold', color: '#000', fontSize: 14 },
 
   cartSection: { marginBottom: 25, gap: 10 },
-  cartItem: { flexDirection: 'row', alignItems: 'center', padding: 15, borderRadius: 20, borderWidth: 1, gap: 15 },
-  cartItemName: { fontSize: 15 },
-  cartItemSub: { fontSize: 12, opacity: 0.5, marginTop: 4 },
-  cartItemPrice: { fontSize: 17 },
+  cartItem: { flexDirection: 'row', alignItems: 'center', padding: 14, borderRadius: 20, borderWidth: 1, gap: 12 },
+  cartItemName: { fontSize: 14 },
+  cartItemSub: { fontSize: 11, opacity: 0.5, marginTop: 4 },
+  cartItemPrice: { fontSize: 15 },
   removeBtn: { padding: 8, backgroundColor: 'rgba(231, 76, 60, 0.1)', borderRadius: 10 },
 
   imgRow: { flexDirection: 'row', gap: 10 },
-  pickBtn: { width: 85, height: 85, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
-  imgThumb: { width: 85, height: 85, borderRadius: 20, marginRight: 10 },
+  pickBtn: { width: 80, height: 80, borderRadius: 20, borderWidth: 2, borderStyle: 'dashed', justifyContent: 'center', alignItems: 'center' },
+  imgThumb: { width: 80, height: 80, borderRadius: 20, marginRight: 10 },
 
-  bottomSection: { marginTop: 20, gap: 20 },
-  grandTotalBox: { padding: 25, borderRadius: 30, borderWidth: 1, alignItems: 'center' },
-  gtLabel: { fontSize: 11, fontWeight: 'bold', letterSpacing: 2, opacity: 0.6 },
-  gtVal: { fontSize: 36, fontWeight: 'bold', marginTop: 8 },
-  finalBtn: { height: 70, borderRadius: 25, justifyContent: 'center', alignItems: 'center', elevation: 8 },
-  finalBtnText: { fontSize: 17, fontWeight: 'bold', color: '#000', letterSpacing: 1 }
+  bottomSection: { marginTop: 15, gap: 20 },
+  grandTotalBox: { padding: 22, borderRadius: 30, borderWidth: 1, alignItems: 'center' },
+  gtLabel: { fontSize: 10, fontWeight: 'bold', letterSpacing: 1.5, opacity: 0.6 },
+  gtVal: { fontSize: 30, fontWeight: 'bold', marginTop: 8 },
+  finalBtn: { height: 65, borderRadius: 25, justifyContent: 'center', alignItems: 'center', elevation: 8 },
+  finalBtnText: { fontSize: 15, fontWeight: 'bold', color: '#000', letterSpacing: 1 }
 });

@@ -54,9 +54,11 @@ export default function CollateralComponent() {
   const fetchCollaterals = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-
+    console.log("fetchCollaterals call 1");
     try {
       const response = await api.get('/customers/collatral/me');
+      console.log("collaterals response",response);
+      console.log("collaterals data",response.data);
       if (response.data.success) {
         setItems(response.data.data.data || []);
       }
@@ -417,59 +419,59 @@ export default function CollateralComponent() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  topActions: { flexDirection: 'row', gap: 12, padding: 20, paddingBottom: 10 },
-  actionBtn: { height: 50, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 20 },
-  actionBtnText: { fontWeight: 'bold', fontSize: 14 },
+  topActions: { flexDirection: 'row', gap: 10, padding: 20, paddingBottom: 10 },
+  actionBtn: { height: 48, borderRadius: 12, flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8, paddingHorizontal: 18 },
+  actionBtnText: { fontWeight: 'bold', fontSize: 13, letterSpacing: 0.3 },
   searchContainer: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, marginTop: 10 },
   searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
-  searchInput: { flex: 1, height: 50, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 15 },
+  searchInput: { flex: 1, height: 48, borderRadius: 15, paddingLeft: 45, paddingRight: 15, borderWidth: 1, fontSize: 13 },
 
   filterRow: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginVertical: 10 },
-  filterTab: { paddingHorizontal: 15, paddingVertical: 8, borderRadius: 10, borderWidth: 1 },
-  filterTabText: { fontSize: 11, fontWeight: 'bold' },
+  filterTab: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 10, borderWidth: 1 },
+  filterTabText: { fontSize: 10, fontWeight: 'bold' },
 
-  card: { padding: 20, borderRadius: 25, marginBottom: 15, borderWidth: 1 },
+  card: { padding: 18, borderRadius: 25, marginBottom: 15, borderWidth: 1 },
   cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 15 },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 },
-  iconBox: { width: 45, height: 45, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  customerName: { fontSize: 18, fontWeight: 'bold' },
-  customerPhone: { fontSize: 12, marginTop: 2 },
-  statusBadgeSmall: { paddingVertical: 4, paddingHorizontal: 8, borderRadius: 6 },
+  iconBox: { width: 42, height: 42, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  customerName: { fontSize: 16, fontWeight: 'bold', letterSpacing: 0.3 },
+  customerPhone: { fontSize: 10, marginTop: 2, opacity: 0.6 },
+  statusBadgeSmall: { paddingVertical: 3, paddingHorizontal: 7, borderRadius: 6 },
   divider: { height: 1, width: '100%', marginBottom: 15, opacity: 0.3 },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
-  itemName: { fontSize: 16, fontWeight: 'bold' },
-  itemWeight: { fontSize: 14 },
+  itemName: { fontSize: 14, fontWeight: 'bold', letterSpacing: 0.2 },
+  itemWeight: { fontSize: 12, opacity: 0.7 },
   
-  metricsGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.02)', padding: 15, borderRadius: 15, marginBottom: 15 },
+  metricsGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 15, marginBottom: 15 },
   metricItem: { alignItems: 'flex-start' },
-  metricLabel: { fontSize: 9, fontWeight: 'bold', marginBottom: 4, opacity: 0.6 },
-  metricVal: { fontSize: 15, fontWeight: 'bold' },
+  metricLabel: { fontSize: 8, fontWeight: 'bold', marginBottom: 4, opacity: 0.5 },
+  metricVal: { fontSize: 13, fontWeight: 'bold' },
 
   manageBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, borderRadius: 12, borderWidth: 1, gap: 8 },
 
   empty: { alignItems: 'center', marginTop: 100 },
-  emptyText: { marginTop: 20, fontSize: 14 },
+  emptyText: { marginTop: 20, fontSize: 14, opacity: 0.6 },
 
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
   modalContent: { borderRadius: 25, padding: 25 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold' },
-  calcForm: { gap: 15, marginBottom: 20 },
-  calcInput: { height: 50, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15 },
-  resultBox: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.03)', padding: 15, borderRadius: 15, marginBottom: 20 },
-  submitBtn: { height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  modalTitle: { fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
+  calcForm: { gap: 12, marginBottom: 20 },
+  calcInput: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
+  resultBox: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 15, marginBottom: 20 },
+  submitBtn: { height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
 
   detailContent: { borderRadius: 30, padding: 25, maxHeight: '80%' },
   detailHeader: { marginBottom: 20 },
-  detName: { fontSize: 22, fontWeight: 'bold' },
-  detSub: { fontSize: 14, marginTop: 4 },
-  detailStats: { flexDirection: 'row', gap: 15, marginBottom: 25 },
-  dStat: { flex: 1, padding: 12, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.03)' },
-  dLabel: { fontSize: 10, opacity: 0.5, marginBottom: 4 },
-  dVal: { fontSize: 14, fontWeight: 'bold' },
-  sectionTitle: { fontSize: 14, fontWeight: 'bold', marginBottom: 15, opacity: 0.8 },
+  detName: { fontSize: 19, fontWeight: 'bold', letterSpacing: 0.5 },
+  detSub: { fontSize: 12, marginTop: 4, opacity: 0.6 },
+  detailStats: { flexDirection: 'row', gap: 12, marginBottom: 25 },
+  dStat: { flex: 1, padding: 10, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.03)' },
+  dLabel: { fontSize: 9, opacity: 0.5, marginBottom: 4, fontWeight: 'bold' },
+  dVal: { fontSize: 13, fontWeight: 'bold' },
+  sectionTitle: { fontSize: 13, fontWeight: 'bold', marginBottom: 12, opacity: 0.8, letterSpacing: 0.5 },
   historyRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
   paymentInputBox: { marginTop: 20 },
-  modalLabel: { fontSize: 12, fontWeight: 'bold', marginBottom: 8, opacity: 0.6 },
-  detailBtns: { flexDirection: 'row', gap: 12, marginTop: 20 }
+  modalLabel: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, opacity: 0.5 },
+  detailBtns: { flexDirection: 'row', gap: 10, marginTop: 20 }
 });

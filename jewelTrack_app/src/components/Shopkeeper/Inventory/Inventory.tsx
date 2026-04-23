@@ -144,18 +144,19 @@ export default function InventoryComponent() {
     <View style={styles.container}>
       
       {/* Metrics Highlights */}
-      <View style={styles.metricsBar}>
-        <View style={[styles.metItem, { borderRightWidth: 1, borderRightColor: theme.border }]}>
-           <Text style={[styles.metVal, { color: theme.brand }]}>{metrics.totalItems}</Text>
-           <Text style={styles.metLabel}>SKUs</Text>
+      {/* Header Summary */}
+      <View style={styles.statsHeader}>
+        <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+           <Text style={[styles.miniLabel, { color: theme.text }]}>TOTAL SKU</Text>
+           <Text style={[styles.miniVal, { color: theme.text }]}>{metrics.totalItems}</Text>
         </View>
-        <View style={[styles.metItem, { borderRightWidth: 1, borderRightColor: theme.border }]}>
-           <Text style={[styles.metVal, { color: theme.brand }]}>{metrics.totalQty}</Text>
-           <Text style={styles.metLabel}>Total Qty</Text>
+        <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+           <Text style={[styles.miniLabel, { color: theme.text }]}>STOCK QTY</Text>
+           <Text style={[styles.miniVal, { color: theme.brand }]}>{metrics.totalQty}</Text>
         </View>
-        <View style={styles.metItem}>
-           <Text style={[styles.metVal, { color: '#e74c3c' }]}>{metrics.lowStock}</Text>
-           <Text style={styles.metLabel}>Critical</Text>
+        <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
+           <Text style={[styles.miniLabel, { color: theme.text }]}>CRITICAL</Text>
+           <Text style={[styles.miniVal, { color: '#e74c3c' }]}>{metrics.lowStock}</Text>
         </View>
       </View>
 
@@ -209,30 +210,31 @@ export default function InventoryComponent() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  metricsBar: { flexDirection: 'row', margin: 20, padding: 20, borderRadius: 25, backgroundColor: 'rgba(0,0,0,0.03)', borderWidth: 1, borderColor: 'rgba(0,0,0,0.05)' },
-  metItem: { flex: 1, alignItems: 'center' },
-  metVal: { fontSize: 18, fontWeight: 'bold' },
-  metLabel: { fontSize: 10, opacity: 0.5, marginTop: 4, fontWeight: 'bold' },
+  
+  statsHeader: { flexDirection: 'row', paddingHorizontal: 20, gap: 10, marginTop: 20 },
+  miniStat: { flex: 1, padding: 12, borderRadius: 20, borderWidth: 1, alignItems: 'center' },
+  miniLabel: { fontSize: 9, fontWeight: 'bold', opacity: 0.5, marginBottom: 5 },
+  miniVal: { fontSize: 16, fontWeight: 'bold' },
 
-  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10, marginBottom: 15 },
+  searchRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, gap: 10, marginBottom: 15, marginTop: 20 },
   searchIcon: { position: 'absolute', left: 35, zIndex: 1, opacity: 0.5 },
-  searchInput: { flex: 1, height: 50, borderRadius: 12, paddingLeft: 45, borderWidth: 1 },
-  addIconBtn: { width: 50, height: 50, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+  searchInput: { flex: 1, height: 50, borderRadius: 18, paddingLeft: 45, borderWidth: 1, fontSize: 13 },
+  addIconBtn: { width: 50, height: 50, borderRadius: 18, justifyContent: 'center', alignItems: 'center', elevation: 4 },
 
-  filterScroll: { maxHeight: 45 },
-  filterTab: { height: 35, paddingHorizontal: 15, borderRadius: 10, borderWidth: 1, justifyContent: 'center' },
+  filterScroll: { maxHeight: 50, marginBottom: 5 },
+  filterTab: { height: 35, paddingHorizontal: 15, borderRadius: 12, borderWidth: 1, justifyContent: 'center' },
   filterText: { fontSize: 10, fontWeight: 'bold' },
 
-  card: { flexDirection: 'row', padding: 15, borderRadius: 20, marginBottom: 15, alignItems: 'center', borderWidth: 1 },
-  iconBox: { width: 55, height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
+  card: { flexDirection: 'row', padding: 15, borderRadius: 25, marginBottom: 15, alignItems: 'center', borderWidth: 1, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 10 },
+  iconBox: { width: 55, height: 55, borderRadius: 18, justifyContent: 'center', alignItems: 'center', marginRight: 15 },
   info: { flex: 1 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  itemType: { fontSize: 16, fontWeight: 'bold' },
-  lowStockBadge: { backgroundColor: '#e74c3c', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, flexDirection: 'row', alignItems: 'center', gap: 3 },
+  itemType: { fontSize: 15, fontWeight: 'bold', letterSpacing: 0.3 },
+  lowStockBadge: { backgroundColor: '#e74c3c', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, flexDirection: 'row', alignItems: 'center', gap: 4 },
   lowStockText: { color: '#fff', fontSize: 8, fontWeight: 'bold' },
-  metalText: { fontSize: 11, marginTop: 2 },
-  badgeRow: { flexDirection: 'row', gap: 8, marginTop: 6 },
-  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
-  badgeText: { fontSize: 11, fontWeight: '600' },
-  deleteBtn: { padding: 10 }
+  metalText: { fontSize: 11, marginTop: 3, opacity: 0.6 },
+  badgeRow: { flexDirection: 'row', gap: 8, marginTop: 10 },
+  badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8 },
+  badgeText: { fontSize: 10, fontWeight: 'bold' },
+  deleteBtn: { padding: 8, backgroundColor: 'rgba(231, 76, 60, 0.1)', borderRadius: 12, marginLeft: 10 }
 });

@@ -32,17 +32,17 @@ export default function Signup() {
     if (form.phone.length !== 10) return Alert.alert('Error', 'Phone number must be 10 digits');
     if (form.password !== form.confirmPassword) return Alert.alert('Error', 'Passwords do not match');
 
+    console.log('[Signup] Attempting signup for:', form.email);
     setLoading(true);
     try {
       const res = await api.post('/auth/signup', form);
       const user = res.data.data.user;
-      
+      console.log('[Signup] SUCCESS — user:', user?.email);
       setUser(user);
-
       Alert.alert('Success', 'Shop Registered Successfully! Please Login.');
       router.replace('/login'); 
     } catch (error: any) {
-      console.log("Signup Error:", error.response?.data || error.message);
+      console.log('[Signup] FAILED —', error.response?.data?.message || error.message);
       Alert.alert('Signup Failed', error.response?.data?.message || 'Server not connected');
     } finally {
       setLoading(false);

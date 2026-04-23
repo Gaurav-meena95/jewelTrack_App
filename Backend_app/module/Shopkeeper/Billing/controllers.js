@@ -10,7 +10,6 @@ const createBilling = async (req, res) => {
         if (!items || items.length === 0) {
             return res.status(400).json({ success: false, message: "Cart cannot be empty" })
         }
-
         const existingUser = await Customer.findOne({ phone })
         if (!existingUser) {
             return res.status(404).json({ success: false, message: "Customer not found register user" })
@@ -21,10 +20,7 @@ const createBilling = async (req, res) => {
             const basePrice = (Number(item.weight) * Number(item.ratePerGram))
             const finalPrice = basePrice + (basePrice * (Number(item.makingChargePercent) || 0) / 100) + (basePrice * (Number(item.gstPercent) || 0) / 100) - (Number(item.manualAdjustment) || 0)
             grandTotal += finalPrice;
-            return {
-                ...item,
-                finalPrice
-            }
+            return { ...item, finalPrice }
         });
 
         if (amountPaid > grandTotal) {
@@ -34,37 +30,23 @@ const createBilling = async (req, res) => {
         let paymentStatus = 'unpaid'
         let remainingAmount = grandTotal
         if (amountPaid === 0) {
-            paymentStatus = 'unpaid'
-            remainingAmount = grandTotal
+            paymentStatus = 'unpaid'; remainingAmount = grandTotal
         } else if (amountPaid < grandTotal) {
-            paymentStatus = 'partially_paid'
-            remainingAmount = grandTotal - amountPaid
+            paymentStatus = 'partially_paid'; remainingAmount = grandTotal - amountPaid
         } else {
-            paymentStatus = 'paid'
-            remainingAmount = 0
+            paymentStatus = 'paid'; remainingAmount = 0
         }
 
         const createBill = await Bill.create({
             customerId: existingUser._id,
             image: image || [],
-            invoice: {
-                items: processedItems,
-                grandTotal
-            },
-            payment: {
-                amountPaid,
-                remainingAmount,
-                paymentStatus,
-                paymentMethod
-            }
+            invoice: { items: processedItems, grandTotal },
+            payment: { amountPaid, remainingAmount, paymentStatus, paymentMethod }
         })
-        console.log('Bill Generate SuccessFully', createBill)
+        console.log('[Billing] Bill created — ID:', createBill._id, '| customer:', phone, '| total:', grandTotal)
         return res.status(201).json({ success: true, message: 'Bill Generate SuccessFully', data: { Bill: createBill } })
-
-
-
     } catch (error) {
-        console.log(error)
+        console.log('[Billing] createBilling ERROR —', error)
         res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
