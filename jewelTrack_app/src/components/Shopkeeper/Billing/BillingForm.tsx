@@ -1,10 +1,10 @@
 import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  View, Text, TextInput,  
-  StyleSheet, ScrollView, Alert, ActivityIndicator, 
+  View, Text, TextInput,
+  StyleSheet, ScrollView, Alert, ActivityIndicator,
   KeyboardAvoidingView, Platform, FlatList,
-  Dimensions, Image
+  Dimensions, Image, ActionSheetIOS
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../../constants/theme';
@@ -145,15 +145,64 @@ export default function CreateBill() {
 
   const grandTotal = cart.reduce((sum, item) => sum + item.finalPrice, 0);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  const [cameraPermission, requestCameraPermission] = ImagePicker.useCameraPermissions();
+
+  const captureFromCamera = async () => {
+    // Request if not yet determined
+    if (!cameraPermission?.granted) {
+      const { granted } = await requestCameraPermission();
+      if (!granted) {
+        return Alert.alert(
+          'Camera Permission Required',
+          'Please allow camera access in your phone Settings to take photos.',
+          [{ text: 'OK' }]
+        );
+      }
+    }
+    const result = await ImagePicker.launchCameraAsync({
       allowsEditing: true,
       quality: 0.5,
       base64: true
     });
     if (!result.canceled && result.assets[0].base64) {
       setImages([...images, `data:image/jpeg;base64,${result.assets[0].base64}`]);
+    }
+  };
+
+
+  const pickFromGallery = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      quality: 0.5,
+      base64: true
+    });
+    if (!result.canceled && result.assets[0].base64) {
+      setImages([...images, `data:image/jpeg;base64,${result.assets[0].base64}`]);
+    }
+  };
+
+  const pickImage = () => {
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', '📷  Take Photo', '🖼️  Choose from Gallery'],
+          cancelButtonIndex: 0,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) captureFromCamera();
+          else if (buttonIndex === 2) pickFromGallery();
+        }
+      );
+    } else {
+      Alert.alert(
+        'Add Photo',
+        'Choose an option',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: '📷  Camera', onPress: captureFromCamera },
+          { text: '🖼️  Gallery', onPress: pickFromGallery },
+        ]
+      );
     }
   };
 
@@ -323,16 +372,18 @@ export default function CreateBill() {
 
            {/* CART LIST */}
            <View style={styles.cartSection}>
-                 <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
-                    <View style={{ flex: 1 }}>
-                       <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
-                       <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
-                    </View>
-                    <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
-                    <Pressable onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
-                       <Ionicons name="trash-outline" size={18} color="#e74c3c" />
-                    </Pressable>
-                 </View>
+                 {cart.map((item, idx) => (
+                   <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+                      <View style={{ flex: 1 }}>
+                         <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
+                         <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
+                      </View>
+                      <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
+                      <Pressable onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
+                         <Ionicons name="trash-outline" size={18} color="#e74c3c" />
+                      </Pressable>
+                   </View>
+                 ))}
            </View>
 
            {/* IMAGES */}

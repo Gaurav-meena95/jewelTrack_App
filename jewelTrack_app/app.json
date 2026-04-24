@@ -9,10 +9,21 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "JewelTrack uses your camera to attach jewelry photos to invoices.",
+        "NSPhotoLibraryUsageDescription": "JewelTrack accesses your photo library to attach images to invoices."
+      },
+      "bundleIdentifier": "com.gaurav.jeweltrack"
     },
     "android": {
       "package": "com.gaurav.jeweltrack",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#1a1a1a",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -28,6 +39,13 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "JewelTrack accesses your photos to attach images to invoices.",
+          "cameraPermission": "JewelTrack uses your camera to take photos for invoices."
+        }
+      ],
       [
         "expo-splash-screen",
         {

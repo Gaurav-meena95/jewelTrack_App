@@ -1,11 +1,12 @@
-import React from 'react';
-import { View, Text, StyleSheet, useColorScheme, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, useColorScheme, Dimensions, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors, Fonts } from '../constants/theme';
 import Pressable from '../components/ui/Pressable';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
@@ -14,6 +15,39 @@ export default function LandingPage() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const isDark = colorScheme === 'dark';
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Auto-redirect if already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const [token, user] = await Promise.all([
+          AsyncStorage.getItem('x-access-token'),
+          AsyncStorage.getItem('user'),
+        ]);
+        if (token && user) {
+          console.log('[Index] Session found — redirecting to dashboard');
+          router.replace('/(tabs)');
+          return;
+        }
+      } catch (e) {
+        console.log('[Index] Session check failed', e);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+    checkSession();
+  }, []);
+
+  // Show a minimal loader while checking storage (avoids landing-page flash)
+  if (checkingSession) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+        <FontAwesome5 name="gem" size={40} color={theme.brand} style={{ marginBottom: 20 }} />
+        <ActivityIndicator color={theme.brand} />
+      </View>
+    );
+  }
 
   const features = [
     { id: '1', name: 'Smart CRM', icon: 'people' },

@@ -21,10 +21,19 @@ api.interceptors.request.use(async (config) => {
     return Promise.reject(error);
 });
 
-let sessionExpired = false;
 let isRefreshing = false;
+let failedQueue: { resolve: (token: string) => void; reject: (err: any) => void }[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+    failedQueue.forEach(prom => {
+        if (error) prom.reject(error);
+        else prom.resolve(token!);
+    });
+    failedQueue = [];
+};
 
 api.interceptors.response.use(async (response) => {
+    // Persist any rotated tokens the backend sends back
     const newAccessToken = response.headers['x-access-token'];
     const newRefreshToken = response.headers['x-refresh-token'];
     if (newAccessToken || newRefreshToken) {
@@ -34,15 +43,23 @@ api.interceptors.response.use(async (response) => {
 }, async (error: any) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry && !sessionExpired) {
-        originalRequest._retry = true;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+        if (isRefreshing) {
+            // Queue this request until the in-progress refresh completes
+            return new Promise<string>((resolve, reject) => {
+                failedQueue.push({ resolve, reject });
+            }).then(token => {
+                originalRequest.headers['Authorization'] = `JWT ${token}`;
+                return api(originalRequest);
+            }).catch(err => Promise.reject(err));
+        }
 
-        if (isRefreshing) return Promise.reject(error);
+        originalRequest._retry = true;
         isRefreshing = true;
 
         try {
             const { refreshToken } = await getToken();
-            if (!refreshToken) throw new Error('No refresh token');
+            if (!refreshToken) throw new Error('No refresh token available');
 
             const refreshRes = await axios.post(`${BASE_URL}/auth/refresh`, {}, {
                 headers: { 'x-refresh-token': refreshToken }
@@ -53,15 +70,15 @@ api.interceptors.response.use(async (response) => {
             await saveToken(newAccess, newRefresh);
 
             originalRequest.headers['Authorization'] = `JWT ${newAccess}`;
+            processQueue(null, newAccess);
             isRefreshing = false;
             return api(originalRequest);
         } catch (refreshError) {
+            processQueue(refreshError, null);
             isRefreshing = false;
-            sessionExpired = true;
-            console.log('Session fully expired — clearing tokens, go to login');
+            console.log('[API] Session expired — clearing tokens, redirecting to login');
             await clearTokens();
             router.replace('/login');
-            setTimeout(() => { sessionExpired = false; }, 5000);
             return Promise.reject(refreshError);
         }
     }
@@ -70,5 +87,3 @@ api.interceptors.response.use(async (response) => {
 });
 
 export default api;
-
-
