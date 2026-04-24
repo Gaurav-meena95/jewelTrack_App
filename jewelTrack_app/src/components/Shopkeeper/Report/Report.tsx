@@ -1,10 +1,11 @@
+import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity, 
+  
   ActivityIndicator, 
   RefreshControl,
   Alert,
@@ -132,7 +133,7 @@ export default function ReportComponent() {
       <View style={styles.controls}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
           {['today', '7days', '30days', 'all'].map(r => (
-            <TouchableOpacity 
+            <Pressable 
               key={r} 
               onPress={() => setDateRange(r)}
               style={[
@@ -144,12 +145,12 @@ export default function ReportComponent() {
               <Text style={{ color: dateRange === r ? '#000' : theme.text, fontSize: 11, fontWeight: 'bold' }}>
                 {r.toUpperCase()}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </ScrollView>
-        <TouchableOpacity style={[styles.shareBtn, { backgroundColor: theme.brand }]} onPress={exportCSV}>
+        <Pressable style={[styles.shareBtn, { backgroundColor: theme.brand }]} onPress={exportCSV}>
            <Ionicons name="share-social-outline" size={20} color="#000" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {loading ? (

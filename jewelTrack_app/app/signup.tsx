@@ -1,12 +1,14 @@
+import Pressable from '../components/ui/Pressable';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput,  StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-
 import api from '../utils/api';
 import { Colors } from '../constants/theme';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { useAuth } from '../context/AuthContext';
 import { useColorScheme } from 'react-native';
+import CustomAlert from '../components/ui/CustomAlert';
+import { useAlert } from '../hooks/use-alert';
 
 export default function Signup() {
   const { setUser } = useAuth();
@@ -25,12 +27,14 @@ export default function Signup() {
     role: 'shopkeeper'
   });
 
+  const { alertState, showAlert, hideAlert } = useAlert();
+
   const handleSignup = async () => {
     if (!form.shopName || !form.name || !form.phone || !form.email || !form.password) {
-      return Alert.alert('Error', 'Please fill all the fields');
+      return showAlert('Error', 'Please fill all the fields');
     }
-    if (form.phone.length !== 10) return Alert.alert('Error', 'Phone number must be 10 digits');
-    if (form.password !== form.confirmPassword) return Alert.alert('Error', 'Passwords do not match');
+    if (form.phone.length !== 10) return showAlert('Error', 'Phone number must be 10 digits');
+    if (form.password !== form.confirmPassword) return showAlert('Error', 'Passwords do not match');
 
     console.log('[Signup] Attempting signup for:', form.email);
     setLoading(true);
@@ -39,11 +43,12 @@ export default function Signup() {
       const user = res.data.data.user;
       console.log('[Signup] SUCCESS — user:', user?.email);
       setUser(user);
-      Alert.alert('Success', 'Shop Registered Successfully! Please Login.');
-      router.replace('/login'); 
+      showAlert('Success', 'Shop Registered Successfully! Please Login.', [
+        { text: 'OK', onPress: () => router.replace('/login') }
+      ]);
     } catch (error: any) {
       console.log('[Signup] FAILED —', error.response?.data?.message || error.message);
-      Alert.alert('Signup Failed', error.response?.data?.message || 'Server not connected');
+      showAlert('Signup Failed', error.response?.data?.message || 'Server not connected');
     } finally {
       setLoading(false);
     }
@@ -98,9 +103,9 @@ export default function Signup() {
               placeholderTextColor="#999"
               onChangeText={(txt) => setForm({...form, password: txt})}
             />
-            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+            <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
               <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.icon} />
-            </TouchableOpacity>
+            </Pressable>
           </View>
           <TextInput 
             placeholder="Confirm Password" 
@@ -110,19 +115,27 @@ export default function Signup() {
             onChangeText={(txt) => setForm({...form, confirmPassword: txt})}
           />
 
-          <TouchableOpacity 
+          <Pressable 
             style={[styles.button, { backgroundColor: theme.brand }, loading && { opacity: 0.7 }]} 
             onPress={handleSignup}
             disabled={loading}
           >
             <Text style={styles.buttonText}>{loading ? 'Processing...' : 'Create Account'}</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity onPress={() => router.push('/login')} style={styles.link}>
+          <Pressable onPress={() => router.push('/login')} style={styles.link}>
             <Text style={[styles.linkText, { color: theme.text, opacity: 0.7 }]}>Already have an account? <Text style={{ color: theme.brand, fontWeight: 'bold', opacity: 1 }}>Login</Text></Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
+
+      <CustomAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        buttons={alertState.buttons}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 }

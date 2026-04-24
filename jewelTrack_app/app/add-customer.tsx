@@ -1,10 +1,13 @@
+import Pressable from '../components/ui/Pressable';
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput,  StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import CustomAlert from '../components/ui/CustomAlert';
+import { useAlert } from '../hooks/use-alert';
 
 // ⚠️ MUST be outside component — prevents keyboard dismiss on re-render
 const InputField = ({ label, placeholder, value, onChangeText, keyboardType = 'default', multiline = false, required = false, theme }: any) => (
@@ -58,27 +61,28 @@ export default function AddCustomer() {
     setForm(prev => ({ ...prev, [field]: val }));
   }, []);
 
+  const { alertState, showAlert, hideAlert } = useAlert();
+
   const handleSubmit = async () => {
     if (!form.name || !form.phone || !form.father_name || !form.address) {
-      return Alert.alert('Missing Fields', 'Please fill all required (*) fields');
+      return showAlert('Missing Fields', 'Please fill all required (*) fields');
     }
     if (form.phone.length !== 10) {
-      return Alert.alert('Invalid Phone', 'Phone number must be exactly 10 digits');
+      return showAlert('Invalid Phone', 'Phone number must be exactly 10 digits');
     }
-
     console.log('[AddCustomer] Registering customer:', form.phone);
     setLoading(true);
     try {
       const response = await api.post('/customers/register', form);
       if (response.data.success) {
         console.log('[AddCustomer] SUCCESS — customer:', form.name);
-        Alert.alert('Success', 'Customer registered successfully! 👤');
-        router.back();
+        showAlert('Success', 'Customer registered successfully!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
       }
     } catch (error: any) {
       console.log('[AddCustomer] FAILED —', error.response?.data?.message || error.message);
-      const errorMessage = error.response?.data?.message || 'Failed to register customer. Please try again.';
-      Alert.alert('Registration Failed', errorMessage);
+      showAlert('Registration Failed', error.response?.data?.message || 'Failed to register customer. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -150,7 +154,7 @@ export default function AddCustomer() {
             theme={theme}
           />
 
-          <TouchableOpacity 
+          <Pressable 
             style={[styles.submitBtn, { backgroundColor: theme.brand }]} 
             onPress={handleSubmit}
             disabled={loading}
@@ -163,13 +167,21 @@ export default function AddCustomer() {
                 <Text style={styles.submitBtnText}>Register Customer</Text>
               </>
             )}
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => router.back()}>
+          <Pressable style={styles.cancelBtn} onPress={() => router.back()}>
             <Text style={[styles.cancelBtnText, { color: theme.text, opacity: 0.6 }]}>Cancel</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
+
+      <CustomAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        buttons={alertState.buttons}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 }

@@ -4,7 +4,7 @@ import {
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity, 
+  Pressable, 
   ActivityIndicator, 
   RefreshControl,
   Alert,
@@ -286,9 +286,9 @@ export default function Bills() {
         <View style={styles.orderInfo}>
           <Ionicons name="sparkles" size={14} color={theme.brand} style={{ marginRight: 5 }} />
           <Text style={[styles.itemName, { color: theme.text, flex: 1 }]}>{firstItem.itemName} {item.invoice?.items.length > 1 ? `+${item.invoice.items.length - 1} more items` : ''}</Text>
-          <TouchableOpacity style={{ padding: 5 }} onPress={() => printBill(item)}>
+          <Pressable style={{ padding: 5 }} onPress={() => printBill(item)}>
              <Ionicons name="share-outline" size={20} color={theme.text} style={{ opacity: 0.5 }} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
         
         <View style={styles.statsRow}>
@@ -301,12 +301,12 @@ export default function Bills() {
               <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {payment.remainingAmount.toFixed(0)}</Text>
            </View>
            {payment.paymentStatus !== 'paid' && (
-             <TouchableOpacity 
+             <Pressable 
                style={[styles.payBtn, { backgroundColor: theme.brand }]} 
                onPress={() => openPaymentModal(item)}
              >
                <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 11 }}>RECEIVE</Text>
-             </TouchableOpacity>
+             </Pressable>
            )}
         </View>
       </View>
@@ -314,7 +314,7 @@ export default function Bills() {
   };
 
   const renderCustomerItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <Pressable 
       style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => {
         setSearchQuery(item.phone);
@@ -343,7 +343,7 @@ export default function Bills() {
         <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>{item.totalBills} Invoices</Text>
         <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Last: {new Date(item.lastPurchase).toLocaleDateString()}</Text>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
@@ -368,24 +368,24 @@ export default function Bills() {
 
       {/* Header Actions */}
       <View style={styles.actionContainer}>
-         <TouchableOpacity 
+         <Pressable 
             style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
             onPress={() => router.push('/create-bill')}
          >
             <Ionicons name="add" size={24} color="#000" />
             <Text style={[styles.addNewText, { color: '#000' }]}>Create Invoice</Text>
-         </TouchableOpacity>
+         </Pressable>
       </View>
 
       {/* View Switcher - Segmented Control Style */}
       <View style={[styles.tabSwitcher, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.tab, viewMode === 'customers' && { backgroundColor: theme.brand }]}
           onPress={() => setViewMode('customers')}
         >
           <Text style={[styles.tabText, { color: viewMode === 'customers' ? '#000' : theme.text, opacity: viewMode === 'customers' ? 1 : 0.5 }]}>CUSTOMERS</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
+        </Pressable>
+        <Pressable 
           style={[styles.tab, viewMode === 'all' && { backgroundColor: theme.brand }]}
           onPress={() => {
             setViewMode('all');
@@ -393,7 +393,7 @@ export default function Bills() {
           }}
         >
           <Text style={[styles.tabText, { color: viewMode === 'all' ? '#000' : theme.text, opacity: viewMode === 'all' ? 1 : 0.5 }]}>ALL BILLS</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {/* Search Bar */}
@@ -428,12 +428,12 @@ export default function Bills() {
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={80} color={theme.icon} style={{ opacity: 0.2 }} />
               <Text style={[styles.emptyText, { color: theme.text, opacity: 0.5 }]}>No bills generated yet</Text>
-              <TouchableOpacity 
+              <Pressable 
                 style={[styles.emptyBtn, { borderColor: theme.brand }]}
                 onPress={() => router.push('/create-bill')}
               >
                 <Text style={{ color: theme.brand, fontWeight: 'bold' }}>Create Invoice</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           }
         />
@@ -501,21 +501,21 @@ export default function Bills() {
               </View>
 
               <View style={styles.modalBtns}>
-                 <TouchableOpacity 
+                 <Pressable 
                    style={[styles.modalCloseBtn, { borderColor: theme.border }]} 
                    onPress={() => setPaymentModalVisible(false)}
                    disabled={submittingPayment}
                  >
                    <Text style={{ color: theme.text, fontWeight: 'bold' }}>Cancel</Text>
-                 </TouchableOpacity>
+                 </Pressable>
 
-                 <TouchableOpacity 
+                 <Pressable 
                    style={[styles.modalSubmitBtn, { backgroundColor: theme.brand }]} 
                    onPress={handleRecordPayment}
                    disabled={submittingPayment}
                  >
                    {submittingPayment ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Receive Pay</Text>}
-                 </TouchableOpacity>
+                 </Pressable>
               </View>
            </View>
         </View>

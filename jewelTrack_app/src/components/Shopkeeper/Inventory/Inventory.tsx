@@ -1,10 +1,11 @@
+import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity, 
+  
   ActivityIndicator, 
   RefreshControl,
   Alert,
@@ -133,9 +134,9 @@ export default function InventoryComponent() {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.deleteBtn} onPress={() => handleDelete(item._id)}>
+        <Pressable style={styles.deleteBtn} onPress={() => handleDelete(item._id)}>
           <Ionicons name="trash-outline" size={20} color="#e74c3c" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -167,14 +168,14 @@ export default function InventoryComponent() {
           placeholder="Search items..." placeholderTextColor="#999"
           value={searchQuery} onChangeText={setSearchQuery}
         />
-        <TouchableOpacity style={[styles.addIconBtn, { backgroundColor: theme.brand }]} onPress={() => router.push('/add-inventory')}>
+        <Pressable style={[styles.addIconBtn, { backgroundColor: theme.brand }]} onPress={() => router.push('/add-inventory')}>
            <Ionicons name="add" size={24} color="#000" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll} contentContainerStyle={{ paddingHorizontal: 20, gap: 10 }}>
         {METAL_OPTIONS.map(m => (
-          <TouchableOpacity 
+          <Pressable 
             key={m} 
             onPress={() => setMetalFilter(m)}
             style={[
@@ -184,7 +185,7 @@ export default function InventoryComponent() {
             ]}
           >
             <Text style={[styles.filterText, { color: metalFilter === m ? '#000' : theme.text }]}>{m.toUpperCase()}</Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </ScrollView>
 

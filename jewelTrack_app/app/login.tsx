@@ -1,5 +1,6 @@
+import Pressable from '../components/ui/Pressable';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, useColorScheme, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput,  StyleSheet, Alert, useColorScheme, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import { BASE_URL } from '../utils/api';
@@ -7,6 +8,8 @@ import { saveToken, saveUser } from '../utils/auth';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { Colors } from '../constants/theme';
 import Animated, { FadeInUp, FadeInDown } from 'react-native-reanimated';
+import CustomAlert from '../components/ui/CustomAlert';
+import { useAlert } from '../hooks/use-alert';
 
 export default function Login() {
   const router = useRouter();
@@ -16,8 +19,10 @@ export default function Login() {
   const [form, setForm] = useState({ identifier: '', password: '', role: 'shopkeeper' });
   const [showPassword, setShowPassword] = useState(false);
 
+  const { alertState, showAlert, hideAlert } = useAlert();
+
   const handleLogin = async () => {
-    if (!form.identifier || !form.password) return Alert.alert('Error', 'Please fill all the fields');
+    if (!form.identifier || !form.password) return showAlert('Error', 'Please fill all the fields');
     console.log('[Login] Attempting login for:', form.identifier);
     setLoading(true);
     try {
@@ -30,7 +35,7 @@ export default function Login() {
       router.replace('/(tabs)');
     } catch (error: any) {
       console.log('[Login] FAILED —', error.response?.data?.message || error.message);
-      Alert.alert('Login Failed', error.response?.data?.message || 'Invalid Credentials');
+      showAlert('Login Failed', error.response?.data?.message || 'Invalid Credentials');
     } finally {
       setLoading(false);
     }
@@ -66,25 +71,33 @@ export default function Login() {
             secureTextEntry={!showPassword} 
             onChangeText={(txt) => setForm({...form, password: txt})}
           />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
+          <Pressable onPress={() => setShowPassword(!showPassword)} style={styles.eyeIcon}>
             <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={theme.icon} />
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.button, { backgroundColor: theme.brand }, loading && { opacity: 0.7 }]} 
           onPress={handleLogin} 
           disabled={loading}
         >
           <Text style={styles.buttonText}>{loading ? 'Logging in...' : 'Sign In'}</Text>
-        </TouchableOpacity>
+        </Pressable>
 
-        <TouchableOpacity onPress={() => router.push('/signup')} style={styles.footerLink}>
+        <Pressable onPress={() => router.push('/signup')} style={styles.footerLink}>
           <Text style={{ color: theme.text, opacity: 0.7 }}>
             Don't have an account? <Text style={{ color: theme.brand, fontWeight: 'bold', opacity: 1 }}>Sign Up</Text>
           </Text>
-        </TouchableOpacity>
+        </Pressable>
       </Animated.View>
+
+      <CustomAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        buttons={alertState.buttons}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 }

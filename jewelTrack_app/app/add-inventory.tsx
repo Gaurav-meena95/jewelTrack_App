@@ -1,11 +1,14 @@
+import Pressable from '../components/ui/Pressable';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput,  StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../utils/api';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker'; // We installed this in Phase 1
+import CustomAlert from '../components/ui/CustomAlert';
+import CustomPicker from '../components/ui/CustomPicker';
+import { useAlert } from '../hooks/use-alert';
 
 export default function AddInventory() {
   const router = useRouter();
@@ -20,11 +23,12 @@ export default function AddInventory() {
     totalWeight: ''
   });
 
+  const { alertState, showAlert, hideAlert } = useAlert();
+
   const handleSubmit = async () => {
     if (!form.jewelleryType || !form.totalWeight || !form.quantity) {
-      return Alert.alert('Missing Fields', 'Please fill all fields');
+      return showAlert('Missing Fields', 'Please fill all fields');
     }
-
     console.log('[AddInventory] Adding stock:', form.jewelleryType);
     setLoading(true);
     try {
@@ -33,20 +37,27 @@ export default function AddInventory() {
         quantity: parseInt(form.quantity),
         totalWeight: parseFloat(form.totalWeight)
       };
-
       const res = await api.post('/shops/inventory/create', payload);
       if (res.data.success) {
         console.log('[AddInventory] SUCCESS —', form.jewelleryType);
-        Alert.alert('Success', 'Stock added to inventory! 📦');
-        router.back();
+        showAlert('Success', 'Stock added to inventory!', [
+          { text: 'OK', onPress: () => router.back() }
+        ]);
       }
     } catch (error: any) {
       console.log('[AddInventory] FAILED —', error.response?.data?.message || error.message);
-      Alert.alert('Error', error.response?.data?.message || 'Failed to add stock');
+      showAlert('Error', error.response?.data?.message || 'Failed to add stock');
     } finally {
       setLoading(false);
     }
   };
+
+  const metalOptions = [
+    { label: 'Gold', value: 'gold' },
+    { label: 'Silver', value: 'silver' },
+    { label: 'Diamond', value: 'diamond' },
+    { label: 'Platinum', value: 'platinum' },
+  ];
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
@@ -72,19 +83,12 @@ export default function AddInventory() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.label, { color: theme.text }]}>Metal Type *</Text>
-              <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                <Picker
-                  selectedValue={form.metalType}
-                  onValueChange={(itemValue) => setForm({...form, metalType: itemValue})}
-                  style={{ color: theme.text }}
-                  dropdownIconColor={theme.brand}
-                >
-                  <Picker.Item label="Gold" value="gold" />
-                  <Picker.Item label="Silver" value="silver" />
-                  <Picker.Item label="Diamond" value="diamond" />
-                  <Picker.Item label="Platinum" value="platinum" />
-                </Picker>
-              </View>
+              <CustomPicker
+                options={metalOptions}
+                selectedValue={form.metalType}
+                onValueChange={(v) => setForm({ ...form, metalType: v })}
+                placeholder="Select Metal..."
+              />
             </View>
           </View>
 
@@ -113,16 +117,24 @@ export default function AddInventory() {
             </View>
           </View>
 
-          <TouchableOpacity 
+          <Pressable 
             style={[styles.submitBtn, { backgroundColor: theme.brand }]} 
             onPress={handleSubmit}
             disabled={loading}
           >
             {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitBtnText}>Add to Stock</Text>}
-          </TouchableOpacity>
+          </Pressable>
 
         </View>
       </ScrollView>
+
+      <CustomAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        buttons={alertState.buttons}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 }
@@ -135,7 +147,6 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: 'bold', marginBottom: 8, marginLeft: 5 },
   input: { padding: 15, borderRadius: 15, borderWidth: 1, fontSize: 16 },
   row: { flexDirection: 'row', gap: 15 },
-  pickerContainer: { borderRadius: 15, borderWidth: 1, overflow: 'hidden', height: 55, justifyContent: 'center' },
   submitBtn: { padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 30, elevation: 4 },
   submitBtnText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
 });

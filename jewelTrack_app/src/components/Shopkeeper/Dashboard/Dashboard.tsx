@@ -1,10 +1,11 @@
+import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   ScrollView, 
-  TouchableOpacity, 
+  
   ActivityIndicator, 
   RefreshControl,
   Dimensions,
@@ -83,7 +84,7 @@ export default function DashboardComponent() {
   }, []);
 
   const QuickAction = ({ icon, label, route, color }: any) => (
-    <TouchableOpacity 
+    <Pressable 
       style={[styles.actionCard, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => router.push(route)}
     >
@@ -91,7 +92,7 @@ export default function DashboardComponent() {
         <Ionicons name={icon} size={24} color={color} />
       </View>
       <Text style={[styles.actionLabel, { color: theme.text }]}>{label}</Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const StatCard = ({ label, value, icon, color }: any) => (
@@ -126,10 +127,10 @@ export default function DashboardComponent() {
             <Text style={[styles.greeting, { color: theme.text, opacity: 0.6 }]}>Welcome back,</Text>
             <Text style={[styles.userName, { color: theme.text, fontFamily: Fonts.bold }]}>{profile?.name || 'Jeweller'}</Text>
          </View>
-         <TouchableOpacity style={[styles.profileBtn, { backgroundColor: theme.card, borderColor: theme.border }]}>
+         <Pressable style={[styles.profileBtn, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Feather name="bell" size={20} color={theme.text} />
             <View style={styles.notifDot} />
-         </TouchableOpacity>
+         </Pressable>
       </View>
 
       {/* HERO STATS */}

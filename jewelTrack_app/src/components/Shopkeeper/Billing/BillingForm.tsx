@@ -1,6 +1,7 @@
+import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  View, Text, TextInput, TouchableOpacity, 
+  View, Text, TextInput,  
   StyleSheet, ScrollView, Alert, ActivityIndicator, 
   KeyboardAvoidingView, Platform, FlatList,
   Dimensions, Image
@@ -217,9 +218,9 @@ export default function CreateBill() {
                     keyboardType="numeric" maxLength={10} value={customerPhone}
                     onChangeText={setCustomerPhone}
                   />
-                  <TouchableOpacity style={[styles.checkBtn, { backgroundColor: theme.brand }]} onPress={checkCustomer}>
+                  <Pressable style={[styles.checkBtn, { backgroundColor: theme.brand }]} onPress={checkCustomer}>
                      <Ionicons name="search" size={20} color="#000" />
-                  </TouchableOpacity>
+                  </Pressable>
                </View>
 
                {customerFound === true && (
@@ -245,9 +246,9 @@ export default function CreateBill() {
                        placeholder="Father's Name" placeholderTextColor="#999"
                        value={customerData.father_name} onChangeText={(v)=>setCustomerData({...customerData, father_name: v})}
                     />
-                    <TouchableOpacity style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
+                    <Pressable style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
                        <Text style={{ color: '#000', fontWeight: 'bold' }}>REGISTER & CONTINUE</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                  </View>
                )}
             </View>
@@ -314,10 +315,10 @@ export default function CreateBill() {
                  </View>
               </View>
 
-              <TouchableOpacity style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItemToCart}>
+              <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItemToCart}>
                  <Ionicons name="cart-outline" size={20} color="#000" />
                  <Text style={styles.addBtnText}>Add to Cart</Text>
-              </TouchableOpacity>
+              </Pressable>
            </View>
 
            {/* CART LIST */}
@@ -328,9 +329,9 @@ export default function CreateBill() {
                        <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
                     </View>
                     <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
-                    <TouchableOpacity onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
+                    <Pressable onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
                        <Ionicons name="trash-outline" size={18} color="#e74c3c" />
-                    </TouchableOpacity>
+                    </Pressable>
                  </View>
            </View>
 
@@ -338,9 +339,9 @@ export default function CreateBill() {
            <View style={styles.section}>
               <Text style={[styles.label, { color: theme.text }]}>ATTACHMENTS</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imgRow}>
-                 <TouchableOpacity style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
+                 <Pressable style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
                     <Ionicons name="camera" size={24} color={theme.brand} />
-                 </TouchableOpacity>
+                 </Pressable>
                  {images.map((img, i) => (
                    <Image key={i} source={{ uri: img }} style={styles.imgThumb} />
                  ))}
@@ -369,9 +370,9 @@ export default function CreateBill() {
                  </View>
               </View>
 
-              <TouchableOpacity style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
+              <Pressable style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
                  {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.finalBtnText}>GENERATE DIGITAL INVOICE</Text>}
-              </TouchableOpacity>
+              </Pressable>
            </View>
 
         </View>

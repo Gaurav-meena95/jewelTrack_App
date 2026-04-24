@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, useColorScheme, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useColorScheme, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Colors, Fonts } from '../constants/theme';
+import Pressable from '../components/ui/Pressable';
 import { FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeInUp, FadeInDown, FadeIn } from 'react-native-reanimated';
 
@@ -57,22 +58,22 @@ export default function LandingPage() {
           
           <Text style={[styles.trustedText, { color: theme.text, opacity: 0.5 }]}>Trusted by 500+ Showrooms</Text>
           
-          <TouchableOpacity 
+          <Pressable 
             style={[styles.primaryButton, { backgroundColor: theme.brand }]}
             onPress={() => router.push('/signup')}
             activeOpacity={0.8}
           >
             <Text style={styles.primaryButtonText}>Create Free Account</Text>
             <Ionicons name="arrow-forward" size={20} color="#fff" />
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity 
+          <Pressable 
             style={[styles.secondaryButton, { borderColor: theme.border, backgroundColor: isDark ? '#1E1E1E' : '#fafafa' }]}
             onPress={() => router.push('/login')}
             activeOpacity={0.8}
           >
             <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Log In to Dashboard</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           <View style={styles.footerRow}>
              <MaterialIcons name="security" size={12} color={theme.brand} />

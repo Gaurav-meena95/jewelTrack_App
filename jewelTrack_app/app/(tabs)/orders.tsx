@@ -4,7 +4,7 @@ import {
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity, 
+  Pressable, 
   ActivityIndicator, 
   RefreshControl,
   Alert,
@@ -154,7 +154,7 @@ export default function Orders() {
   };
 
   const renderCustomerItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <Pressable 
       style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => { setSelectedCustomer(item); setViewMode('history'); }}
     >
@@ -180,7 +180,7 @@ export default function Orders() {
             <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {item.totalDue}</Text>
          </View>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   const renderOrderItem = ({ item }: { item: any }) => {
@@ -188,7 +188,7 @@ export default function Orders() {
     const firstItemName = item.items && item.items.length > 0 ? item.items[0].itemName : 'Custom Order';
 
     return (
-      <TouchableOpacity 
+      <Pressable 
         style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
         onPress={() => { setActiveOrder(item); setShowDetail(true); }}
       >
@@ -210,7 +210,7 @@ export default function Orders() {
               <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {item.RemainingAmount}</Text>
            </View>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -220,21 +220,21 @@ export default function Orders() {
       {/* Header Actions */}
       <View style={styles.actionContainer}>
          {viewMode === 'history' ? (
-           <TouchableOpacity 
+           <Pressable 
               style={[styles.addNewBtn, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}
               onPress={() => setViewMode('dashboard')}
            >
               <Ionicons name="arrow-back" size={20} color={theme.text} />
               <Text style={[styles.addNewText, { color: theme.text }]}>Back to Customers</Text>
-           </TouchableOpacity>
+           </Pressable>
          ) : (
-           <TouchableOpacity 
+           <Pressable 
               style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
               onPress={() => router.push('/create-order')}
            >
               <Ionicons name="add" size={24} color="#000" />
               <Text style={[styles.addNewText, { color: '#000' }]}>New Order</Text>
-           </TouchableOpacity>
+           </Pressable>
          )}
       </View>
 
@@ -286,9 +286,9 @@ export default function Orders() {
            <View style={[styles.detailContent, { backgroundColor: theme.card }]}>
               <View style={styles.modalHeader}>
                  <Text style={[styles.modalTitle, { color: theme.text }]}>Order Details</Text>
-                 <TouchableOpacity onPress={() => setShowDetail(false)}>
+                 <Pressable onPress={() => setShowDetail(false)}>
                    <Ionicons name="close" size={24} color={theme.text} />
-                 </TouchableOpacity>
+                 </Pressable>
               </View>
 
               <ScrollView>
@@ -316,18 +316,18 @@ export default function Orders() {
                       onChangeText={setPaymentAmount}
                     />
                     <View style={styles.row}>
-                       <TouchableOpacity 
+                       <Pressable 
                          style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
                          onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), activeOrder.orderStatus)}
                        >
                           <Text style={{ fontWeight: 'bold' }}>Update Payment</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity 
+                       </Pressable>
+                       <Pressable 
                          style={[styles.actionBtn, { backgroundColor: '#2ecc71', flex: 1 }]}
                          onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), 'complete')}
                        >
                           <Text style={{ color: '#fff', fontWeight: 'bold' }}>Complete Order</Text>
-                       </TouchableOpacity>
+                       </Pressable>
                     </View>
                  </View>
 

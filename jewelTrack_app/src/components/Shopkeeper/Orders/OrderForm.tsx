@@ -1,6 +1,7 @@
+import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, TextInput, TouchableOpacity, 
+  View, Text, TextInput,  
   StyleSheet, ScrollView, Alert, ActivityIndicator, 
   KeyboardAvoidingView, Platform, Image, Dimensions 
 } from 'react-native';
@@ -162,9 +163,9 @@ export default function CreateOrder() {
                   placeholder="Enter phone number" keyboardType="phone-pad" maxLength={10}
                   value={lookupPhone} onChangeText={setLookupPhone}
                 />
-                <TouchableOpacity style={[styles.lookupBtn, { backgroundColor: theme.brand }]} onPress={handleLookup}>
+                <Pressable style={[styles.lookupBtn, { backgroundColor: theme.brand }]} onPress={handleLookup}>
                    <Ionicons name="search" size={20} color="#000" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
               {customerFound === true && (
@@ -225,10 +226,10 @@ export default function CreateOrder() {
                 multiline value={currentItem.description} onChangeText={(v)=>setCurrentItem({...currentItem, description: v})} 
               />
 
-              <TouchableOpacity style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItem}>
+              <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItem}>
                  <Ionicons name="add-circle-outline" size={20} color="#000" />
                  <Text style={styles.addBtnText}>Add to Order</Text>
-              </TouchableOpacity>
+              </Pressable>
            </View>
 
            {cart.map((i, idx) => (
@@ -237,16 +238,16 @@ export default function CreateOrder() {
                    <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{i.itemName} ({i.metal})</Text>
                    <Text style={[styles.cartItemSub, { color: theme.text }]}>{i.weight}g est. • {i.description || 'No notes'}</Text>
                 </View>
-                <TouchableOpacity onPress={() => removeItem(idx)}><Ionicons name="close-circle" size={24} color="#e74c3c" /></TouchableOpacity>
+                <Pressable onPress={() => removeItem(idx)}><Ionicons name="close-circle" size={24} color="#e74c3c" /></Pressable>
              </View>
            ))}
 
            <View style={styles.section}>
               <Text style={[styles.label, { color: theme.text }]}>SKETCH / REFERENCE PHOTOS</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imgRow}>
-                 <TouchableOpacity style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
+                 <Pressable style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
                     <Ionicons name="camera-outline" size={30} color={theme.brand} />
-                 </TouchableOpacity>
+                 </Pressable>
                  {images.map((img, i) => <Image key={i} source={{ uri: img }} style={styles.imgThumb} />)}
               </ScrollView>
            </View>
@@ -266,9 +267,9 @@ export default function CreateOrder() {
               <Text style={[styles.label, { color: theme.text }]}>PROMISED DELIVERY DATE</Text>
               <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="YYYY-MM-DD" value={payment.deliveryDate} onChangeText={(v)=>setPayment({...payment, deliveryDate: v})} />
 
-              <TouchableOpacity style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
+              <Pressable style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
                  {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.finalBtnText}>CONFIRM ORDER</Text>}
-              </TouchableOpacity>
+              </Pressable>
            </View>
         </View>
       </ScrollView>

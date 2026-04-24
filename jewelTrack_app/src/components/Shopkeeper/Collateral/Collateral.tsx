@@ -1,26 +1,19 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  TouchableOpacity, 
-  ActivityIndicator, 
-  RefreshControl,
-  Alert,
-  Modal,
-  TextInput,
+  View, Text, StyleSheet, FlatList,
+  ActivityIndicator, RefreshControl, Modal, TextInput,
   ScrollView,
-  Dimensions
+  Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../../../../constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '../../../../utils/api';
-import { Ionicons, MaterialCommunityIcons, MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { roundMoney } from '../../../../utils/money';
-
-const { width } = Dimensions.get('window');
+import CustomAlert from '../../../../components/ui/CustomAlert';
+import { useAlert } from '../../../../hooks/use-alert';
+import Pressable from '../../../../components/ui/Pressable';
 
 // Logic mirrors web: interest = remain * item.interestRate * days / 3000
 const calculateLiveInterest = (item: any) => {
@@ -35,36 +28,32 @@ export default function CollateralComponent() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
+  const { alertState, showAlert, hideAlert } = useAlert();
   
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filter, setFilter] = useState('all'); // all, active, closed
+  const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Calculator State
   const [showCalc, setShowCalc] = useState(false);
   const [calc, setCalc] = useState({ principal: '', rate: '', startDate: new Date().toISOString().split('T')[0], endDate: new Date().toISOString().split('T')[0] });
   const [calcResult, setCalcResult] = useState<string | null>(null);
 
-  // Detail Modal State
   const [showDetail, setShowDetail] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
 
   const fetchCollaterals = async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
-    console.log("fetchCollaterals call 1");
     try {
       const response = await api.get('/customers/collatral/me');
-      console.log("collaterals response",response);
-      console.log("collaterals data",response.data);
       if (response.data.success) {
         setItems(response.data.data.data || []);
       }
     } catch (error: any) {
       console.error('Fetch Collaterals Error:', error.message);
-      Alert.alert('Error', 'Failed to load collateral records');
+      showAlert('Error', 'Failed to load collateral records');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -106,7 +95,7 @@ export default function CollateralComponent() {
   };
 
   const handleRecordPayment = async (item: any, amount: number, isAdjustment: boolean) => {
-    if (!amount || amount <= 0) return Alert.alert('Error', 'Enter a valid amount');
+    if (!amount || amount <= 0) return showAlert('Error', 'Enter a valid amount');
     
     try {
       setLoading(true);
@@ -128,25 +117,25 @@ export default function CollateralComponent() {
 
       const res = await api.patch(`/customers/collatral/update?phone=${item.phone}&collatral_id=${item._id}`, payload);
       if (res.data.success) {
-        Alert.alert('Success', isAdjustment ? 'Account Closed!' : 'Payment Recorded!');
+        showAlert('Success', isAdjustment ? 'Account Closed!' : 'Payment Recorded!');
         setShowDetail(false);
         fetchCollaterals(true);
       }
     } catch (err: any) {
-      Alert.alert('Error', err.response?.data?.message || 'Failed to update record');
+      showAlert('Error', err.response?.data?.message || 'Failed to update record');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDelete = async (id: string, phone: string) => {
-    Alert.alert(
+  const handleDelete = (id: string, phone: string) => {
+    showAlert(
       'Confirm Delete',
       'Are you sure you want to delete this closed record?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Delete', 
+        {
+          text: 'Delete',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -154,7 +143,7 @@ export default function CollateralComponent() {
               await api.delete(`/customers/collatral/delete?phone=${phone}&collatral_id=${id}`);
               fetchCollaterals(true);
             } catch (err) {
-              Alert.alert('Error', 'Failed to delete record');
+              showAlert('Error', 'Failed to delete record');
             } finally {
               setLoading(false);
             }
@@ -173,7 +162,7 @@ export default function CollateralComponent() {
     return (
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.cardHeader}>
-          <TouchableOpacity 
+          <Pressable 
             style={styles.headerLeft}
             onPress={() => { setSelectedItem(item); setShowDetail(true); }}
           >
@@ -184,12 +173,12 @@ export default function CollateralComponent() {
                 <Text style={[styles.customerName, { color: theme.text }]}>{customer.name}</Text>
                 <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.6 }]}>+91 {customer.phone}</Text>
              </View>
-          </TouchableOpacity>
+          </Pressable>
           <View style={{ alignItems: 'flex-end', flexDirection: 'row', gap: 10 }}>
              {item.status === 'closed' && (
-               <TouchableOpacity onPress={() => handleDelete(item._id, item.phone)}>
+               <Pressable onPress={() => handleDelete(item._id, item.phone)}>
                  <Ionicons name="trash-outline" size={20} color="#e74c3c" />
-               </TouchableOpacity>
+               </Pressable>
              )}
              <View style={[styles.statusBadgeSmall, { backgroundColor: item.status === 'active' ? '#2ecc7115' : '#e74c3c15' }]}>
                <Text style={{ color: item.status === 'active' ? '#2ecc71' : '#e74c3c', fontSize: 10, fontWeight: 'bold' }}>
@@ -206,9 +195,9 @@ export default function CollateralComponent() {
            <Text style={[styles.itemWeight, { color: theme.text, opacity: 0.5 }]}>{item.weight}g</Text>
         </View>
 
-        <View style={styles.metricsGrid}>
+        <View style={[styles.metricsGrid, { backgroundColor: theme.background }]}>
            <View style={styles.metricItem}>
-             <Text style={styles.metricLabel}>Principal</Text>
+             <Text style={[styles.metricLabel, { color: theme.text }]}>Principal</Text>
              <Text style={[styles.metricVal, { color: theme.text }]}>₹{item.price}</Text>
            </View>
            <View style={styles.metricItem}>
@@ -221,13 +210,13 @@ export default function CollateralComponent() {
            </View>
         </View>
 
-        <TouchableOpacity 
+        <Pressable 
            style={[styles.manageBtn, { borderColor: theme.brand }]}
            onPress={() => { setSelectedItem(item); setShowDetail(true); }}
         >
            <Text style={{ color: theme.brand, fontWeight: 'bold', fontSize: 12 }}>MANAGE ACCOUNT & HISTORY</Text>
            <Ionicons name="chevron-forward" size={14} color={theme.brand} />
-        </TouchableOpacity>
+        </Pressable>
       </View>
     );
   };
@@ -250,7 +239,7 @@ export default function CollateralComponent() {
       {/* Filters */}
       <View style={styles.filterRow}>
         {['all', 'active', 'closed'].map(f => (
-          <TouchableOpacity 
+          <Pressable 
             key={f} 
             onPress={() => setFilter(f)}
             style={[
@@ -262,7 +251,7 @@ export default function CollateralComponent() {
             <Text style={[styles.filterTabText, { color: filter === f ? '#000' : theme.text, opacity: filter === f ? 1 : 0.6 }]}>
               {f.toUpperCase()}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </View>
 
@@ -294,9 +283,9 @@ export default function CollateralComponent() {
            <View style={[styles.modalContent, { backgroundColor: theme.card }]}>
               <View style={styles.modalHeader}>
                  <Text style={[styles.modalTitle, { color: theme.text }]}>Interest Calculator</Text>
-                 <TouchableOpacity onPress={() => setShowCalc(false)}>
+                 <Pressable onPress={() => setShowCalc(false)}>
                    <Ionicons name="close" size={24} color={theme.text} />
-                 </TouchableOpacity>
+                 </Pressable>
               </View>
               <View style={styles.calcForm}>
                   <TextInput 
@@ -324,15 +313,15 @@ export default function CollateralComponent() {
                </View>
 
               {calcResult && (
-                <View style={styles.resultBox}>
+                <View style={[styles.resultBox, { borderColor: theme.border, backgroundColor: theme.background }]}>
                    <Text style={{ color: theme.text, fontSize: 12, opacity: 0.6 }}>Estimated Interest</Text>
                    <Text style={{ color: theme.brand, fontSize: 24, fontWeight: 'bold' }}>₹{calcResult}</Text>
                 </View>
               )}
 
-              <TouchableOpacity style={[styles.submitBtn, { backgroundColor: theme.brand }]} onPress={handleRunCalc}>
+              <Pressable style={[styles.submitBtn, { backgroundColor: theme.brand }]} onPress={handleRunCalc}>
                  <Text style={{ fontWeight: 'bold', color: '#000' }}>CALCULATE</Text>
-              </TouchableOpacity>
+              </Pressable>
            </View>
         </View>
       </Modal>
@@ -343,9 +332,9 @@ export default function CollateralComponent() {
            <View style={[styles.detailContent, { backgroundColor: theme.card }]}>
               <View style={styles.modalHeader}>
                  <Text style={[styles.modalTitle, { color: theme.text }]}>Collateral File</Text>
-                 <TouchableOpacity onPress={() => setShowDetail(false)}>
+                 <Pressable onPress={() => setShowDetail(false)}>
                    <Ionicons name="close" size={24} color={theme.text} />
-                 </TouchableOpacity>
+                 </Pressable>
               </View>
 
               <ScrollView>
@@ -355,23 +344,23 @@ export default function CollateralComponent() {
                  </View>
 
                  <View style={styles.detailStats}>
-                    <View style={styles.dStat}>
-                       <Text style={styles.dLabel}>Amount</Text>
+                    <View style={[styles.dStat, { backgroundColor: theme.background }]}>
+                       <Text style={[styles.dLabel, { color: theme.text }]}>Amount</Text>
                        <Text style={[styles.dVal, { color: theme.text }]}>₹{selectedItem?.price}</Text>
                     </View>
-                    <View style={styles.dStat}>
-                       <Text style={styles.dLabel}>Paid</Text>
+                    <View style={[styles.dStat, { backgroundColor: theme.background }]}>
+                       <Text style={[styles.dLabel, { color: theme.text }]}>Paid</Text>
                        <Text style={[styles.dVal, { color: '#2ecc71' }]}>₹{selectedItem?.totalPaid || 0}</Text>
                     </View>
-                    <View style={styles.dStat}>
-                       <Text style={styles.dLabel}>Status</Text>
+                    <View style={[styles.dStat, { backgroundColor: theme.background }]}>
+                       <Text style={[styles.dLabel, { color: theme.text }]}>Status</Text>
                        <Text style={[styles.dVal, { color: selectedItem?.status === 'active' ? '#d2a907' : '#e74c3c' }]}>{selectedItem?.status?.toUpperCase()}</Text>
                     </View>
                  </View>
 
                  <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction History</Text>
                  {!selectedItem?.paymentHistory || selectedItem.paymentHistory.length === 0 ? (
-                    <Text style={{ textAlign: 'center', opacity: 0.4, marginVertical: 20 }}>No payments recorded yet.</Text>
+                    <Text style={{ textAlign: 'center', opacity: 0.4, marginVertical: 20, color: theme.text }}>No payments recorded yet.</Text>
                  ) : (
                     selectedItem.paymentHistory.map((h: any, idx: number) => (
                       <View key={idx} style={[styles.historyRow, { borderBottomColor: theme.border }]}>
@@ -395,23 +384,30 @@ export default function CollateralComponent() {
                   </View>
 
                   <View style={styles.detailBtns}>
-                    <TouchableOpacity 
+                    <Pressable 
                       style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
                       onPress={() => handleRecordPayment(selectedItem, parseFloat(selectedItem?.tempAmount || '0'), false)}
                     >
-                       <Text style={{ fontWeight: 'bold' }}>Record Pay</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
+                       <Text style={{ fontWeight: 'bold', color: '#000' }}>Record Pay</Text>
+                    </Pressable>
+                    <Pressable 
                       style={[styles.actionBtn, { backgroundColor: '#e74c3c', flex: 1 }]} 
                       onPress={() => handleRecordPayment(selectedItem, parseFloat(selectedItem?.tempAmount || '0'), true)}
                     >
                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Close Account</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   </View>
            </View>
         </View>
       </Modal>
 
+      <CustomAlert
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        buttons={alertState.buttons}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 }
@@ -442,7 +438,7 @@ const styles = StyleSheet.create({
   itemName: { fontSize: 14, fontWeight: 'bold', letterSpacing: 0.2 },
   itemWeight: { fontSize: 12, opacity: 0.7 },
   
-  metricsGrid: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: 'rgba(0,0,0,0.02)', padding: 12, borderRadius: 15, marginBottom: 15 },
+  metricsGrid: { flexDirection: 'row', justifyContent: 'space-between', padding: 12, borderRadius: 15, marginBottom: 15 },
   metricItem: { alignItems: 'flex-start' },
   metricLabel: { fontSize: 8, fontWeight: 'bold', marginBottom: 4, opacity: 0.5 },
   metricVal: { fontSize: 13, fontWeight: 'bold' },
@@ -458,7 +454,7 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 16, fontWeight: 'bold', letterSpacing: 0.5 },
   calcForm: { gap: 12, marginBottom: 20 },
   calcInput: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
-  resultBox: { alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.03)', padding: 12, borderRadius: 15, marginBottom: 20 },
+  resultBox: { alignItems: 'center', borderWidth: 1, padding: 12, borderRadius: 15, marginBottom: 20 },
   submitBtn: { height: 48, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
 
   detailContent: { borderRadius: 30, padding: 25, maxHeight: '80%' },
@@ -466,7 +462,7 @@ const styles = StyleSheet.create({
   detName: { fontSize: 19, fontWeight: 'bold', letterSpacing: 0.5 },
   detSub: { fontSize: 12, marginTop: 4, opacity: 0.6 },
   detailStats: { flexDirection: 'row', gap: 12, marginBottom: 25 },
-  dStat: { flex: 1, padding: 10, borderRadius: 15, backgroundColor: 'rgba(0,0,0,0.03)' },
+  dStat: { flex: 1, padding: 10, borderRadius: 15 },
   dLabel: { fontSize: 9, opacity: 0.5, marginBottom: 4, fontWeight: 'bold' },
   dVal: { fontSize: 13, fontWeight: 'bold' },
   sectionTitle: { fontSize: 13, fontWeight: 'bold', marginBottom: 12, opacity: 0.8, letterSpacing: 0.5 },

@@ -4,7 +4,7 @@ import {
   Text, 
   StyleSheet, 
   FlatList, 
-  TouchableOpacity, 
+  Pressable, 
   TextInput, 
   ActivityIndicator, 
   RefreshControl,
@@ -70,7 +70,7 @@ export default function Customers() {
   }, []);
 
   const renderCustomerItem = ({ item }: { item: any }) => (
-    <TouchableOpacity 
+    <Pressable 
       style={[styles.customerCard, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => router.push(`/customer-detail/${item._id}`)}
     >
@@ -88,7 +88,7 @@ export default function Customers() {
       </View>
 
       <Ionicons name="chevron-forward" size={20} color={theme.icon} />
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
@@ -105,18 +105,18 @@ export default function Customers() {
             onChangeText={setSearch}
           />
           {search !== '' && (
-            <TouchableOpacity onPress={() => setSearch('')}>
+            <Pressable onPress={() => setSearch('')}>
               <Ionicons name="close-circle" size={18} color={theme.icon} />
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
         
-        <TouchableOpacity 
+        <Pressable 
           style={[styles.addButton, { backgroundColor: theme.brand }]}
           onPress={() => router.push('/add-customer')}
         >
           <Ionicons name="add" size={24} color="#fff" />
-        </TouchableOpacity>
+        </Pressable>
       </View>
 
       {loading ? (
@@ -140,12 +140,12 @@ export default function Customers() {
               <Text style={[styles.emptySub, { color: theme.text }]}>
                 {search ? "Try a different search term" : "Start by adding your first customer"}
               </Text>
-              <TouchableOpacity 
+              <Pressable 
                 style={[styles.emptyBtn, { borderColor: theme.brand }]}
                 onPress={() => router.push('/add-customer')}
               >
                 <Text style={{ color: theme.brand, fontWeight: 'bold' }}>Add Customer</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           }
         />
