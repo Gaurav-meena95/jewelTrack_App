@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, 
   TouchableOpacity, Alert, useColorScheme, 
@@ -13,6 +13,43 @@ import api from '../../utils/api';
 import { saveUser, clearTokens } from '../../utils/auth';
 
 import { Fonts } from '../../constants/theme';
+
+// ─── Sub-components defined OUTSIDE parent to prevent re-mount on re-render ───
+
+const SettingSection = ({ title, children, theme }: any) => (
+  <View style={styles.section}>
+    <Text style={[styles.sectionTitle, { color: theme.text, opacity: 0.5 }]}>{title.toUpperCase()}</Text>
+    <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
+      {children}
+    </View>
+  </View>
+);
+
+const ActionItem = ({ icon, label, color, onPress, value, last, theme }: any) => (
+  <TouchableOpacity 
+    style={[styles.actionItem, !last && { borderBottomWidth: 1, borderBottomColor: theme.border }]} 
+    onPress={onPress}
+    disabled={!onPress}
+  >
+    <View style={[styles.actionIcon, { backgroundColor: color + '15' }]}>
+      <Ionicons name={icon} size={20} color={color} />
+    </View>
+    <View style={{ flex: 1 }}>
+      <Text style={[styles.actionLabel, { color: theme.text, fontFamily: Fonts.medium }]}>{label}</Text>
+      {value && <Text style={[styles.actionValue, { color: theme.text }]}>{value}</Text>}
+    </View>
+    {onPress && <Ionicons name="chevron-forward" size={14} color={theme.icon} style={{ opacity: 0.3 }} />}
+  </TouchableOpacity>
+);
+
+const Tag = ({ label, onRemove, theme }: any) => (
+  <View style={[styles.tag, { backgroundColor: theme.brand + '15', borderColor: theme.brand + '30' }]}>
+    <Text style={[styles.tagText, { color: theme.text }]}>{label}</Text>
+    <TouchableOpacity onPress={onRemove} style={styles.tagRemove}>
+      <Ionicons name="close-circle" size={16} color={theme.brand} />
+    </TouchableOpacity>
+  </View>
+);
 
 export default function Settings() {
   const router = useRouter();
@@ -64,13 +101,19 @@ export default function Settings() {
   const handleUpdateProfile = async () => {
     setSaving(true);
     try {
-       const res = await api.patch('/auth/setting', form);
+       // Strip empty password so backend doesn't try to validate/hash it
+       const payload: any = { ...form };
+       if (!payload.password || payload.password.trim() === '') {
+         delete payload.password;
+       }
+       const res = await api.patch('/auth/shopkeeper/setting', payload);
        if (res.data.success) {
          Alert.alert('Success', 'Business preferences calibrated! ✨');
          setProfileModalVisible(false);
          fetchProfile();
        }
     } catch (e: any) {
+       console.log('[Settings] Update failed —', e.response?.data || e.message);
        Alert.alert('Update Failed', e.response?.data?.message || 'Failed to update profile');
     } finally {
        setSaving(false);
@@ -80,7 +123,15 @@ export default function Settings() {
   const handleLogout = () => {
     Alert.alert('Logout', 'Are you sure you want to log out?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Logout', style: 'destructive', onPress: async () => { await clearTokens(); router.replace('/'); } }
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          await clearTokens();   // clears all AsyncStorage
+          setUser(null);         // reset local state immediately
+          router.replace('/login');  // go straight to login, skip index session check
+        }
+      }
     ]);
   };
 
@@ -106,40 +157,6 @@ export default function Settings() {
     setForm(prev => ({ ...prev, purities: prev.purities.filter(i => i !== p) }));
   };
 
-  const SettingSection = ({ title, children }: any) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.text, opacity: 0.5 }]}>{title.toUpperCase()}</Text>
-      <View style={[styles.sectionCard, { backgroundColor: theme.card, borderColor: theme.border, borderWidth: 1 }]}>
-        {children}
-      </View>
-    </View>
-  );
-
-  const ActionItem = ({ icon, label, color, onPress, value, last }: any) => (
-    <TouchableOpacity 
-      style={[styles.actionItem, !last && { borderBottomWidth: 1, borderBottomColor: theme.border }]} 
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <View style={[styles.actionIcon, { backgroundColor: color + '15' }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={[styles.actionLabel, { color: theme.text, fontFamily: Fonts.medium }]}>{label}</Text>
-        {value && <Text style={[styles.actionValue, { color: theme.text }]}>{value}</Text>}
-      </View>
-      {onPress && <Ionicons name="chevron-forward" size={14} color={theme.icon} style={{ opacity: 0.3 }} />}
-    </TouchableOpacity>
-  );
-
-  const Tag = ({ label, onRemove }: any) => (
-    <View style={[styles.tag, { backgroundColor: theme.brand + '15', borderColor: theme.brand + '30' }]}>
-      <Text style={[styles.tagText, { color: theme.text }]}>{label}</Text>
-      <TouchableOpacity onPress={onRemove} style={styles.tagRemove}>
-        <Ionicons name="close-circle" size={16} color={theme.brand} />
-      </TouchableOpacity>
-    </View>
-  );
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: theme.background }]} contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
@@ -158,31 +175,32 @@ export default function Settings() {
       </View>
 
       {/* ACCOUNT SETTINGS */}
-      <SettingSection title="Account & Identity">
-        <ActionItem icon="person-outline" label="Business Profile" value="Name, Email, Shop" color="#d2a907" onPress={() => setProfileModalVisible(true)} />
-        <ActionItem icon="lock-closed-outline" label="Security" value="Update Password" color="#e74c3c" onPress={() => setProfileModalVisible(true)} />
-        <ActionItem icon="call-outline" label="Contact verified" value={user?.phone} color="#2ecc71" last />
+      <SettingSection title="Account & Identity" theme={theme}>
+        <ActionItem theme={theme} icon="person-outline" label="Business Profile" value="Name, Email, Shop" color="#d2a907" onPress={() => setProfileModalVisible(true)} />
+        <ActionItem theme={theme} icon="lock-closed-outline" label="Security" value="Update Password" color="#e74c3c" onPress={() => setProfileModalVisible(true)} />
+        <ActionItem theme={theme} icon="call-outline" label="Contact verified" value={user?.phone} color="#2ecc71" last />
       </SettingSection>
 
       {/* FEEDBACK & SUPPORT */}
-      <SettingSection title="Feedback & Support">
-        <ActionItem icon="chatbubble-ellipses-outline" label="Request a Feature" value="Tell us what's missing" color="#3498db" onPress={() => Alert.alert('Feature Request', 'Send your suggestions to support@jeweltrack.com')} />
-        <ActionItem icon="bug-outline" label="Report a Bug" value="Help us improve" color="#e67e22" onPress={() => Alert.alert('Report Bug', 'Our engineers are ready! Please email details to tech@jeweltrack.com')} />
-        <ActionItem icon="star-outline" label="Rate JewelTrack" value="Love using the app?" color="#f1c40f" last onPress={() => Alert.alert('Rating', 'Redirecting to App Store...')} />
+      <SettingSection title="Feedback & Support" theme={theme}>
+        <ActionItem theme={theme} icon="chatbubble-ellipses-outline" label="Request a Feature" value="Tell us what's missing" color="#3498db" onPress={() => Alert.alert('Feature Request', 'Send your suggestions to support@jeweltrack.com')} />
+        <ActionItem theme={theme} icon="bug-outline" label="Report a Bug" value="Help us improve" color="#e67e22" onPress={() => Alert.alert('Report Bug', 'Our engineers are ready! Please email details to tech@jeweltrack.com')} />
+        <ActionItem theme={theme} icon="star-outline" label="Rate JewelTrack" value="Love using the app?" color="#f1c40f" last onPress={() => Alert.alert('Rating', 'Redirecting to App Store...')} />
       </SettingSection>
 
-      {/* BUSINESS PRESETS (Mirror of Web CustomOptionsSection) */}
-      <SettingSection title="Inventory Presets">
+      {/* BUSINESS PRESETS */}
+      <SettingSection title="Inventory Presets" theme={theme}>
         <View style={styles.presetBox}>
            <Text style={[styles.presetTitle, { color: theme.text }]}>Predefined Item Names</Text>
            <View style={styles.tagCloud}>
-              {form.itemNames.map(item => <Tag key={item} label={item} onRemove={() => removeItemName(item)} />)}
+              {form.itemNames.map(item => <Tag key={item} label={item} onRemove={() => removeItemName(item)} theme={theme} />)}
            </View>
            <View style={styles.inlineAdd}>
               <TextInput 
                 style={[styles.inlineInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Add new item (e.g. Ring)" placeholderTextColor="#999"
                 value={newItemName} onChangeText={setNewItemName}
+                returnKeyType="done" onSubmitEditing={addItemName}
               />
               <TouchableOpacity style={[styles.inlineBtn, { backgroundColor: theme.brand }]} onPress={addItemName}>
                  <Ionicons name="add" size={20} color="#000" />
@@ -195,13 +213,14 @@ export default function Settings() {
         <View style={styles.presetBox}>
            <Text style={[styles.presetTitle, { color: theme.text }]}>Purity Presets</Text>
            <View style={styles.tagCloud}>
-              {form.purities.map(p => <Tag key={p} label={p} onRemove={() => removePurity(p)} />)}
+              {form.purities.map(p => <Tag key={p} label={p} onRemove={() => removePurity(p)} theme={theme} />)}
            </View>
            <View style={styles.inlineAdd}>
               <TextInput 
                 style={[styles.inlineInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Add purity (e.g. 22K)" placeholderTextColor="#999"
                 value={newPurity} onChangeText={setNewPurity}
+                returnKeyType="done" onSubmitEditing={addPurity}
               />
               <TouchableOpacity style={[styles.inlineBtn, { backgroundColor: theme.brand }]} onPress={addPurity}>
                  <Ionicons name="add" size={20} color="#000" />
