@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
@@ -14,9 +14,9 @@ import {
   Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const METAL_OPTIONS = ['all', 'gold', 'silver', 'diamond', 'platinum', 'other'];

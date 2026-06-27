@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput,
@@ -6,14 +6,14 @@ import {
   KeyboardAvoidingView, Platform, Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import CustomAlert from '../../../../components/ui/CustomAlert'
-import CustomPicker from '../../../../components/ui/CustomPicker';
-import { useAlert } from '../../../../hooks/use-alert';
+import CustomAlert from '../../../components/ui/CustomAlert'
+import CustomPicker from '../../../components/ui/CustomPicker';
+import { useAlert } from '../../../hooks/use-alert';
 
 export default function CreateCollateral() {
   const router = useRouter();
@@ -111,7 +111,7 @@ export default function CreateCollateral() {
       const res = await api.post(`/customers/collatral/create?phone=${customerPhone}`, payload);
       if (res.data.success) {
         console.log('[CollateralForm] SUCCESS — collateral ID:', res.data.data?.newCollatral?._id);
-        showAlert('Success', 'Collateral (Girvi) created successfully! 💍', [
+        showAlert('Success', 'Collateral (Girvi) created successfully!', [
           { text: 'OK', onPress: () => router.back() }
         ]);
       }

@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   View, 
@@ -13,11 +13,11 @@ import {
   Share,
   Platform
 } from 'react-native';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { documentDirectory, writeAsStringAsync } from 'expo-file-system';
+import { documentDirectory, writeAsStringAsync } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 const { width } = Dimensions.get('window');

@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View, Text, TextInput,
@@ -7,16 +7,16 @@ import {
   Dimensions, Image, ActionSheetIOS
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
-import api from '../../../../utils/api';
-import { roundMoney, roundWeight } from '../../../../utils/money';
+import api from '../../../utils/api';
+import { roundMoney, roundWeight } from '../../../utils/money';
 
 const { width } = Dimensions.get('window');
-import { Fonts } from '../../../../constants/theme';
+import { Fonts } from '../../../constants/theme';
 
 export default function CreateBill() {
   const router = useRouter();
@@ -99,6 +99,7 @@ export default function CreateBill() {
 
   const saveCustomer = async () => {
     if (!customerData.name) return Alert.alert('Error', 'Customer name is required');
+    if (!customerData.address) return Alert.alert('Error', 'Customer address is required');
     console.log('[BillingForm] Saving customer:', customerPhone, '| found:', customerFound);
     setLoading(true);
     try {
@@ -185,7 +186,7 @@ export default function CreateBill() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: ['Cancel', '📷  Take Photo', '🖼️  Choose from Gallery'],
+          options: ['Cancel', 'Take Photo', 'Choose from Gallery'],
           cancelButtonIndex: 0,
         },
         (buttonIndex) => {
@@ -199,8 +200,8 @@ export default function CreateBill() {
         'Choose an option',
         [
           { text: 'Cancel', style: 'cancel' },
-          { text: '📷  Camera', onPress: captureFromCamera },
-          { text: '🖼️  Gallery', onPress: pickFromGallery },
+          { text: 'Camera', onPress: captureFromCamera },
+          { text: 'Gallery', onPress: pickFromGallery },
         ]
       );
     }
@@ -230,7 +231,7 @@ export default function CreateBill() {
       const res = await api.post(`/customers/bills/create?phone=${selectedCustomer}`, payload);
       if (res.data.success) {
         console.log('[CreateBill] SUCCESS — bill ID:', res.data.data?.Bill?._id);
-        Alert.alert('Success', 'Premium Invoice Generated! 🧾');
+        Alert.alert('Success', 'Premium Invoice Generated!');
         router.back();
       }
     } catch (e: any) {
@@ -249,7 +250,9 @@ export default function CreateBill() {
         <View style={[styles.stickyHeader, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
           <View>
             <Text style={[styles.headerTitle, { color: theme.text, fontFamily: Fonts.bold }]}>New Invoice</Text>
-            <Text style={[styles.headerSub, { color: theme.text }]}>🛒 {cart.length} Items in cart</Text>
+            <Text style={[styles.headerSub, { color: theme.text }]}>
+              <Ionicons name="cart-outline" size={14} color={theme.text} /> {cart.length} Items in cart
+            </Text>
           </View>
           <View style={styles.totalBadge}>
             <Text style={styles.totalBadgeVal}>₹{grandTotal.toLocaleString()}</Text>
@@ -295,6 +298,11 @@ export default function CreateBill() {
                   placeholder="Father's Name" placeholderTextColor="#999"
                   value={customerData.father_name} onChangeText={(v) => setCustomerData({ ...customerData, father_name: v })}
                 />
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]}
+                  placeholder="Address *" placeholderTextColor="#999"
+                  value={customerData.address} onChangeText={(v) => setCustomerData({ ...customerData, address: v })}
+                />
                 <Pressable style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
                   <Text style={{ color: '#000', fontWeight: 'bold' }}>REGISTER & CONTINUE</Text>
                 </Pressable>
@@ -308,10 +316,10 @@ export default function CreateBill() {
 
             <Text style={[styles.label, { color: theme.text }]}>ITEM NAME (Preset or Custom)</Text>
             <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <Picker selectedValue={currentItem.itemName} onValueChange={(v) => setCurrentItem({ ...currentItem, itemName: v })} style={{ color: theme.text }}>
-                <Picker.Item label="Choose Item..." value="" />
-                {presets.itemNames.map(name => <Picker.Item key={name} label={name} value={name} />)}
-                <Picker.Item label="-- Custom Item --" value="custom" />
+              <Picker selectedValue={currentItem.itemName} onValueChange={(v) => setCurrentItem({ ...currentItem, itemName: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                <Picker.Item label="Choose Item..." value="" color={theme.text} />
+                {presets.itemNames.map(name => <Picker.Item key={name} label={name} value={name} color={theme.text} />)}
+                <Picker.Item label="-- Custom Item --" value="custom" color={theme.text} />
               </Picker>
             </View>
             {currentItem.itemName === 'custom' && (
@@ -326,17 +334,19 @@ export default function CreateBill() {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>METAL</Text>
                 <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                  <Picker selectedValue={currentItem.metal} onValueChange={(v) => setCurrentItem({ ...currentItem, metal: v })} style={{ color: theme.text }}>
-                    <Picker.Item label="Gold" value="gold" /><Picker.Item label="Silver" value="silver" /><Picker.Item label="Diamond" value="diamond" />
+                  <Picker selectedValue={currentItem.metal} onValueChange={(v) => setCurrentItem({ ...currentItem, metal: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                    <Picker.Item label="Gold" value="gold" color={theme.text} />
+                    <Picker.Item label="Silver" value="silver" color={theme.text} />
+                    <Picker.Item label="Diamond" value="diamond" color={theme.text} />
                   </Picker>
                 </View>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>PURITY</Text>
                 <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                  <Picker selectedValue={currentItem.purity} onValueChange={(v) => setCurrentItem({ ...currentItem, purity: v })} style={{ color: theme.text }}>
-                    <Picker.Item label="Select..." value="" />
-                    {presets.purities.map(p => <Picker.Item key={p} label={p} value={p} />)}
+                  <Picker selectedValue={currentItem.purity} onValueChange={(v) => setCurrentItem({ ...currentItem, purity: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                    <Picker.Item label="Select..." value="" color={theme.text} />
+                    {presets.purities.map(p => <Picker.Item key={p} label={p} value={p} color={theme.text} />)}
                   </Picker>
                 </View>
               </View>
@@ -345,22 +355,22 @@ export default function CreateBill() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>WEIGHT (g)</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.weight} onChangeText={(v) => setCurrentItem({ ...currentItem, weight: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.weight} onChangeText={(v) => setCurrentItem({ ...currentItem, weight: v })} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>RATE/G (₹)</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.ratePerGram} onChangeText={(v) => setCurrentItem({ ...currentItem, ratePerGram: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.ratePerGram} onChangeText={(v) => setCurrentItem({ ...currentItem, ratePerGram: v })} />
               </View>
             </View>
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>MAKING %</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={currentItem.makingChargePercent} onChangeText={(v) => setCurrentItem({ ...currentItem, makingChargePercent: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={currentItem.makingChargePercent} onChangeText={(v) => setCurrentItem({ ...currentItem, makingChargePercent: v })} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>GST %</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="3" keyboardType="numeric" value={currentItem.gstPercent} onChangeText={(v) => setCurrentItem({ ...currentItem, gstPercent: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="3" keyboardType="numeric" value={currentItem.gstPercent} onChangeText={(v) => setCurrentItem({ ...currentItem, gstPercent: v })} />
               </View>
             </View>
 
@@ -409,13 +419,15 @@ export default function CreateBill() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>ADVANCE PAID</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={payment.amountPaid} onChangeText={(v) => setPayment({ ...payment, amountPaid: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={payment.amountPaid} onChangeText={(v) => setPayment({ ...payment, amountPaid: v })} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>METHOD</Text>
                 <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                  <Picker selectedValue={payment.method} onValueChange={(v) => setPayment({ ...payment, method: v })} style={{ color: theme.text }}>
-                    <Picker.Item label="Cash" value="cash" /><Picker.Item label="UPI" value="upi" /><Picker.Item label="Card" value="card" />
+                  <Picker selectedValue={payment.method} onValueChange={(v) => setPayment({ ...payment, method: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                    <Picker.Item label="Cash" value="cash" color={theme.text} />
+                    <Picker.Item label="UPI" value="upi" color={theme.text} />
+                    <Picker.Item label="Card" value="card" color={theme.text} />
                   </Picker>
                 </View>
               </View>

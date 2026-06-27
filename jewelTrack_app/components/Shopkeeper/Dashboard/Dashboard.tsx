@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   View, 
@@ -13,11 +13,11 @@ import {
   Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5, Feather } from '@expo/vector-icons';
-import { Fonts } from '../../../../constants/theme';
+import { Fonts } from '../../../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -80,7 +80,9 @@ export default function DashboardComponent() {
 
   const [profile, setProfile] = useState<any>(null);
   useEffect(() => {
-    api.get('/auth/me').then(res => setProfile(res.data?.data?.user));
+    api.get('/auth/me')
+      .then(res => setProfile(res.data?.data?.user))
+      .catch(err => console.log('[Dashboard] Profile fetch failed:', err.message));
   }, []);
 
   const QuickAction = ({ icon, label, route, color }: any) => (

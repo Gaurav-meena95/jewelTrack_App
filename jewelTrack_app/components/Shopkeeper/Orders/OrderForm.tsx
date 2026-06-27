@@ -1,4 +1,4 @@
-import Pressable from '../../../../components/ui/Pressable';
+import Pressable from '../../../components/ui/Pressable';
 import React, { useState, useEffect } from 'react';
 import {
   View, Text, TextInput,
@@ -6,9 +6,9 @@ import {
   KeyboardAvoidingView, Platform, Image, Dimensions
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors, Fonts } from '../../../../constants/theme';
+import { Colors, Fonts } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -150,7 +150,9 @@ export default function CreateOrder() {
 
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: theme.text, fontFamily: Fonts.bold }]}>Book Custom Order</Text>
-          <Text style={[styles.headerSub, { color: theme.text }]}>🛒 {cart.length} Patterns added</Text>
+          <Text style={[styles.headerSub, { color: theme.text }]}>
+            <Ionicons name="cart-outline" size={14} color={theme.text} /> {cart.length} Patterns added
+          </Text>
         </View>
 
         <View style={styles.content}>
@@ -158,7 +160,7 @@ export default function CreateOrder() {
           <View style={[styles.lookupBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
             <Text style={[styles.label, { color: theme.text }]}>CUSTOMER PHONE</Text>
             <View style={styles.row}>
-              <TextInput
+              <TextInput placeholderTextColor="#999"
                 style={[styles.input, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                 placeholder="Enter phone number" keyboardType="phone-pad" maxLength={10}
                 value={lookupPhone} onChangeText={setLookupPhone}
@@ -178,11 +180,11 @@ export default function CreateOrder() {
             {customerFound === false && (
               <View style={styles.regBox}>
                 <Text style={{ color: theme.text, fontSize: 12, marginBottom: 10, opacity: 0.7 }}>New Customer! Please enter details:</Text>
-                <TextInput
+                <TextInput placeholderTextColor="#999"
                   style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]}
                   placeholder="Full Name *" value={customerData.name} onChangeText={(v) => setCustomerData({ ...customerData, name: v })}
                 />
-                <TextInput
+                <TextInput placeholderTextColor="#999"
                   style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
                   placeholder="Father's Name" value={customerData.father_name} onChangeText={(v) => setCustomerData({ ...customerData, father_name: v })}
                 />
@@ -195,32 +197,34 @@ export default function CreateOrder() {
 
             <Text style={[styles.label, { color: theme.text }]}>ORDER ITEM</Text>
             <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-              <Picker selectedValue={currentItem.itemName} onValueChange={(v) => setCurrentItem({ ...currentItem, itemName: v })} style={{ color: theme.text }}>
-                <Picker.Item label="Choose Template..." value="" />
-                {presets.itemNames.map(n => <Picker.Item key={n} label={n} value={n} />)}
-                <Picker.Item label="-- Custom --" value="custom" />
+              <Picker selectedValue={currentItem.itemName} onValueChange={(v) => setCurrentItem({ ...currentItem, itemName: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                <Picker.Item label="Choose Template..." value="" color={theme.text} />
+                {presets.itemNames.map(n => <Picker.Item key={n} label={n} value={n} color={theme.text} />)}
+                <Picker.Item label="-- Custom --" value="custom" color={theme.text} />
               </Picker>
             </View>
             {currentItem.itemName === 'custom' && (
-              <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginTop: 10 }]} placeholder="Item name..." onChangeText={(v) => setCurrentItem({ ...currentItem, itemName: v })} />
+              <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginTop: 10 }]} placeholder="Item name..." onChangeText={(v) => setCurrentItem({ ...currentItem, itemName: v })} />
             )}
 
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>METAL</Text>
                 <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                  <Picker selectedValue={currentItem.metal} onValueChange={(v) => setCurrentItem({ ...currentItem, metal: v })} style={{ color: theme.text }}>
-                    <Picker.Item label="Gold" value="gold" /><Picker.Item label="Silver" value="silver" /><Picker.Item label="Diamond" value="diamond" />
+                  <Picker selectedValue={currentItem.metal} onValueChange={(v) => setCurrentItem({ ...currentItem, metal: v })} style={{ color: theme.text }} dropdownIconColor={theme.text}>
+                    <Picker.Item label="Gold" value="gold" color={theme.text} />
+                    <Picker.Item label="Silver" value="silver" color={theme.text} />
+                    <Picker.Item label="Diamond" value="diamond" color={theme.text} />
                   </Picker>
                 </View>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>EST. WT</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00g" keyboardType="numeric" value={currentItem.weight} onChangeText={(v) => setCurrentItem({ ...currentItem, weight: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00g" keyboardType="numeric" value={currentItem.weight} onChangeText={(v) => setCurrentItem({ ...currentItem, weight: v })} />
               </View>
             </View>
 
-            <TextInput
+            <TextInput placeholderTextColor="#999"
               style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, height: 80 }]}
               placeholder="Specific instructions (e.g. Laser engraving)..."
               multiline value={currentItem.description} onChangeText={(v) => setCurrentItem({ ...currentItem, description: v })}
@@ -256,16 +260,16 @@ export default function CreateOrder() {
             <View style={styles.row}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>EST. TOTAL (₹)</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={payment.total} onChangeText={(v) => setPayment({ ...payment, total: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={payment.total} onChangeText={(v) => setPayment({ ...payment, total: v })} />
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.label, { color: theme.text }]}>ADVANCE (₹)</Text>
-                <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={payment.advance} onChangeText={(v) => setPayment({ ...payment, advance: v })} />
+                <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={payment.advance} onChangeText={(v) => setPayment({ ...payment, advance: v })} />
               </View>
             </View>
 
             <Text style={[styles.label, { color: theme.text }]}>PROMISED DELIVERY DATE</Text>
-            <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="YYYY-MM-DD" value={payment.deliveryDate} onChangeText={(v) => setPayment({ ...payment, deliveryDate: v })} />
+            <TextInput placeholderTextColor="#999" style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="YYYY-MM-DD" value={payment.deliveryDate} onChangeText={(v) => setPayment({ ...payment, deliveryDate: v })} />
 
             <Pressable style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
               {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.finalBtnText}>CONFIRM ORDER</Text>}

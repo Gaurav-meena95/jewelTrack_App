@@ -97,8 +97,8 @@ export default function LandingPage() {
             onPress={() => router.push('/signup')}
             activeOpacity={0.8}
           >
-            <Text style={styles.primaryButtonText}>Create Free Account</Text>
-            <Ionicons name="arrow-forward" size={20} color="#fff" />
+            <Text style={[styles.primaryButtonText, { color: '#000' }]}>Create Free Account</Text>
+            <Ionicons name="arrow-forward" size={20} color="#000" />
           </Pressable>
 
           <Pressable 
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   primaryButtonText: {
-    color: '#FFF',
+    color: '#000',
     fontSize: 18,
     fontWeight: '700',
     letterSpacing: 0.5,

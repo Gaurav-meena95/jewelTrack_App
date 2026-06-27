@@ -6,14 +6,14 @@ import {
   Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Colors } from '../../../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { useColorScheme } from 'react-native';
-import api from '../../../../utils/api';
+import api from '../../../utils/api';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { roundMoney } from '../../../../utils/money';
-import CustomAlert from '../../../../components/ui/CustomAlert';
-import { useAlert } from '../../../../hooks/use-alert';
-import Pressable from '../../../../components/ui/Pressable';
+import { roundMoney } from '../../../utils/money';
+import CustomAlert from '../../../components/ui/CustomAlert';
+import { useAlert } from '../../../hooks/use-alert';
+import Pressable from '../../../components/ui/Pressable';
 
 // Logic mirrors web: interest = remain * item.interestRate * days / 3000
 const calculateLiveInterest = (item: any) => {
@@ -376,7 +376,7 @@ export default function CollateralComponent() {
 
                   <View style={styles.paymentInputBox}>
                     <Text style={[styles.modalLabel, { color: theme.text }]}>Record Payment (₹)</Text>
-                    <TextInput 
+                    <TextInput placeholderTextColor="#999" 
                       style={[styles.calcInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                       placeholder="Enter Amount" keyboardType="numeric"
                       onChangeText={(v) => { if(selectedItem) selectedItem.tempAmount = v; }}

@@ -1,5 +1,5 @@
 import React from 'react';
-import CollateralComponent from '../../src/components/Shopkeeper/Collateral/Collateral';
+import CollateralComponent from '../../components/Shopkeeper/Collateral/Collateral';
 
 export default function CollateralPage() {
   return <CollateralComponent />;

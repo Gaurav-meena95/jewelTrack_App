@@ -8,7 +8,7 @@ import { Colors, Fonts } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import api from '../../utils/api';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 
 const { width } = Dimensions.get('window');
 
@@ -245,7 +245,6 @@ const styles = StyleSheet.create({
   card: { padding: 20, borderRadius: 25 },
   iconBox: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   cardTitle: { fontSize: 15 },
-  cardValue: { fontSize: 28 },
   cardValue: { fontSize: 28 },
   mainExportBtn: { flexDirection: 'row', height: 65, borderRadius: 20, justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 40, elevation: 4 },
   mainExportText: { fontSize: 16, fontWeight: 'bold' },

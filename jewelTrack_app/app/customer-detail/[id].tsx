@@ -252,7 +252,7 @@ export default function CustomerDetail() {
              <Text style={[styles.modalTitle, { color: theme.text }]}>Edit Customer</Text>
 
              <Text style={[styles.modalLabel, { color: theme.text }]}>Full Name *</Text>
-             <TextInput 
+             <TextInput placeholderTextColor="#999" 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Full Name"
                 value={editForm.name}
@@ -260,7 +260,7 @@ export default function CustomerDetail() {
              />
              
              <Text style={[styles.modalLabel, { color: theme.text }]}>Father/Husband Name</Text>
-             <TextInput 
+             <TextInput placeholderTextColor="#999" 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Father's Name"
                 value={editForm.father_name}
@@ -268,7 +268,7 @@ export default function CustomerDetail() {
              />
              
              <Text style={[styles.modalLabel, { color: theme.text }]}>Phone Number *</Text>
-             <TextInput 
+             <TextInput placeholderTextColor="#999" 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="10 digit phone"
                 keyboardType="phone-pad"
@@ -277,7 +277,7 @@ export default function CustomerDetail() {
              />
 
              <Text style={[styles.modalLabel, { color: theme.text }]}>Email Address (Optional)</Text>
-             <TextInput 
+             <TextInput placeholderTextColor="#999" 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
                 placeholder="Email Address"
                 autoCapitalize="none"
@@ -286,7 +286,7 @@ export default function CustomerDetail() {
              />
 
              <Text style={[styles.modalLabel, { color: theme.text }]}>Complete Address</Text>
-             <TextInput 
+             <TextInput placeholderTextColor="#999" 
                 style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, height: 80, textAlignVertical: 'top' }]} 
                 placeholder="Street Address"
                 multiline
@@ -307,7 +307,7 @@ export default function CustomerDetail() {
                    onPress={handleUpdate}
                    disabled={editing}
                  >
-                   {editing ? <ActivityIndicator color="#fff" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Update</Text>}
+                   {editing ? <ActivityIndicator color="#000" /> : <Text style={{ color: '#000', fontWeight: 'bold' }}>Update</Text>}
                  </TouchableOpacity>
               </View>
            </ScrollView>

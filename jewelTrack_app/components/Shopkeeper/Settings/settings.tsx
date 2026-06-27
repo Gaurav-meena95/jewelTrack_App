@@ -5,14 +5,14 @@ import {
   Modal, TextInput, ActivityIndicator, 
   Platform, KeyboardAvoidingView 
 } from 'react-native';
-import { Colors } from '../../constants/theme';
+import { Colors } from '../../../constants/theme';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
-import api from '../../utils/api';
-import { saveUser, clearTokens } from '../../utils/auth';
+import api from '../../../utils/api';
+import { saveUser, clearTokens } from '../../../utils/auth';
 
-import { Fonts } from '../../constants/theme';
+import { Fonts } from '../../../constants/theme';
 
 // ─── Sub-components defined OUTSIDE parent to prevent re-mount on re-render ───
 
@@ -108,7 +108,7 @@ export default function Settings() {
        }
        const res = await api.patch('/auth/shopkeeper/setting', payload);
        if (res.data.success) {
-         Alert.alert('Success', 'Business preferences calibrated! ✨');
+         Alert.alert('Success', 'Business preferences calibrated!');
          setProfileModalVisible(false);
          fetchProfile();
        }
@@ -251,10 +251,10 @@ export default function Settings() {
               <Text style={[styles.modalTitle, { color: theme.text, fontFamily: Fonts.bold }]}>Edit Business Identity</Text>
               
               <View style={styles.modalForm}>
-                <TextInput style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Shop Name" value={form.shopName} onChangeText={(v)=>setForm({...form, shopName: v})} />
-                <TextInput style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Owner Name" value={form.name} onChangeText={(v)=>setForm({...form, name: v})} />
-                <TextInput style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Email" value={form.email} onChangeText={(v)=>setForm({...form, email: v})} autoCapitalize="none" />
-                <TextInput style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="New Password" value={form.password} onChangeText={(v)=>setForm({...form, password: v})} secureTextEntry />
+                <TextInput placeholderTextColor="#999" style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Shop Name" value={form.shopName} onChangeText={(v)=>setForm({...form, shopName: v})} />
+                <TextInput placeholderTextColor="#999" style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Owner Name" value={form.name} onChangeText={(v)=>setForm({...form, name: v})} />
+                <TextInput placeholderTextColor="#999" style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="Email" value={form.email} onChangeText={(v)=>setForm({...form, email: v})} autoCapitalize="none" />
+                <TextInput placeholderTextColor="#999" style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="New Password" value={form.password} onChangeText={(v)=>setForm({...form, password: v})} secureTextEntry />
               </View>
 
               <View style={styles.modalBtns}>
