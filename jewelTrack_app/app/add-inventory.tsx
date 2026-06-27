@@ -1,6 +1,6 @@
 import Pressable from '../components/ui/Pressable';
 import React, { useState } from 'react';
-import { View, Text, TextInput,  StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Colors } from '../constants/theme';
 import { useColorScheme } from 'react-native';
@@ -15,7 +15,7 @@ export default function AddInventory() {
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
   const [loading, setLoading] = useState(false);
-  
+
   const [form, setForm] = useState({
     jewelleryType: '',
     quantity: '1',
@@ -62,7 +62,7 @@ export default function AddInventory() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]}>
-        
+
         <View style={styles.header}>
           <Text style={[styles.subtitle, { color: theme.text, opacity: 0.6 }]}>
             Maintain your shop stock records
@@ -70,14 +70,14 @@ export default function AddInventory() {
         </View>
 
         <View style={styles.form}>
-          
+
           <Text style={[styles.label, { color: theme.text }]}>Jewelry Type *</Text>
-          <TextInput 
-            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} 
+          <TextInput
+            style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
             placeholder="e.g. Necklace, Ring, Earring"
             placeholderTextColor="#999"
             value={form.jewelleryType}
-            onChangeText={(txt) => setForm({...form, jewelleryType: txt})}
+            onChangeText={(txt) => setForm({ ...form, jewelleryType: txt })}
           />
 
           <View style={styles.row}>
@@ -95,30 +95,30 @@ export default function AddInventory() {
           <View style={styles.row}>
             <View style={{ flex: 1 }}>
               <Text style={[styles.label, { color: theme.text }]}>Total Weight (g) *</Text>
-              <TextInput 
-                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} 
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="0.00"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={form.totalWeight}
-                onChangeText={(txt) => setForm({...form, totalWeight: txt})}
+                onChangeText={(txt) => setForm({ ...form, totalWeight: txt })}
               />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={[styles.label, { color: theme.text }]}>Quantity *</Text>
-              <TextInput 
-                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} 
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]}
                 placeholder="1"
                 placeholderTextColor="#999"
                 keyboardType="numeric"
                 value={form.quantity}
-                onChangeText={(txt) => setForm({...form, quantity: txt})}
+                onChangeText={(txt) => setForm({ ...form, quantity: txt })}
               />
             </View>
           </View>
 
-          <Pressable 
-            style={[styles.submitBtn, { backgroundColor: theme.brand }]} 
+          <Pressable
+            style={[styles.submitBtn, { backgroundColor: theme.brand }]}
             onPress={handleSubmit}
             disabled={loading}
           >

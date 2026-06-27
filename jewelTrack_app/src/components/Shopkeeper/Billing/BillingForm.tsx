@@ -1,6 +1,6 @@
 import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect, useMemo } from 'react';
-import { 
+import {
   View, Text, TextInput,
   StyleSheet, ScrollView, Alert, ActivityIndicator,
   KeyboardAvoidingView, Platform, FlatList,
@@ -22,18 +22,18 @@ export default function CreateBill() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
-  
+
   const [loading, setLoading] = useState(false);
   const [customers, setCustomers] = useState<any[]>([]);
   const [presets, setPresets] = useState({ itemNames: [] as string[], purities: [] as string[] });
-  
+
   // Cart State
   // Customer State
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerFound, setCustomerFound] = useState<boolean | null>(null);
   const [customerData, setCustomerData] = useState({ name: '', father_name: '', address: '', email: '' });
   const [selectedCustomer, setSelectedCustomer] = useState('');
-  
+
   // Cart State
   const [cart, setCart] = useState<any[]>([]);
   const [currentItem, setCurrentItem] = useState({
@@ -244,7 +244,7 @@ export default function CreateBill() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <ScrollView style={[styles.container, { backgroundColor: theme.background }]} stickyHeaderIndices={[0]}>
-        
+
         {/* HEADER BAR */}
         <View style={[styles.stickyHeader, { backgroundColor: theme.background, borderBottomColor: theme.border }]}>
           <View>
@@ -252,179 +252,179 @@ export default function CreateBill() {
             <Text style={[styles.headerSub, { color: theme.text }]}>🛒 {cart.length} Items in cart</Text>
           </View>
           <View style={styles.totalBadge}>
-             <Text style={styles.totalBadgeVal}>₹{grandTotal.toLocaleString()}</Text>
+            <Text style={styles.totalBadgeVal}>₹{grandTotal.toLocaleString()}</Text>
           </View>
         </View>
 
         <View style={styles.content}>
-            {/* CUSTOMER LOOKUP */}
-            <View style={[styles.lookupBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-               <Text style={[styles.label, { color: theme.text }]}>CUSTOMER PHONE</Text>
-               <View style={styles.lookupRow}>
-                  <TextInput 
-                    style={[styles.input, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                    placeholder="Search by phone..." placeholderTextColor="#999"
-                    keyboardType="numeric" maxLength={10} value={customerPhone}
-                    onChangeText={setCustomerPhone}
-                  />
-                  <Pressable style={[styles.checkBtn, { backgroundColor: theme.brand }]} onPress={checkCustomer}>
-                     <Ionicons name="search" size={20} color="#000" />
-                  </Pressable>
-               </View>
-
-               {customerFound === true && (
-                 <View style={styles.foundBox}>
-                    <Ionicons name="checkmark-circle" size={20} color="#2ecc71" />
-                    <View>
-                       <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16 }}>{customerData.name}</Text>
-                       <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>{customerData.address}</Text>
-                    </View>
-                 </View>
-               )}
-
-               {customerFound === false && (
-                 <View style={styles.regBox}>
-                    <Text style={{ color: theme.text, fontSize: 12, marginBottom: 10, opacity: 0.7 }}>New Customer! Please register:</Text>
-                    <TextInput 
-                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
-                       placeholder="Full Name *" placeholderTextColor="#999"
-                       value={customerData.name} onChangeText={(v)=>setCustomerData({...customerData, name: v})}
-                    />
-                    <TextInput 
-                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
-                       placeholder="Father's Name" placeholderTextColor="#999"
-                       value={customerData.father_name} onChangeText={(v)=>setCustomerData({...customerData, father_name: v})}
-                    />
-                    <Pressable style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
-                       <Text style={{ color: '#000', fontWeight: 'bold' }}>REGISTER & CONTINUE</Text>
-                    </Pressable>
-                 </View>
-               )}
+          {/* CUSTOMER LOOKUP */}
+          <View style={[styles.lookupBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Text style={[styles.label, { color: theme.text }]}>CUSTOMER PHONE</Text>
+            <View style={styles.lookupRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+                placeholder="Search by phone..." placeholderTextColor="#999"
+                keyboardType="numeric" maxLength={10} value={customerPhone}
+                onChangeText={setCustomerPhone}
+              />
+              <Pressable style={[styles.checkBtn, { backgroundColor: theme.brand }]} onPress={checkCustomer}>
+                <Ionicons name="search" size={20} color="#000" />
+              </Pressable>
             </View>
 
-           {/* ADD ITEM FORM */}
-           <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
-              <Text style={[styles.formTitle, { color: theme.brand, fontFamily: Fonts.bold }]}>Add Jewelry Item</Text>
-              
-              <Text style={[styles.label, { color: theme.text }]}>ITEM NAME (Preset or Custom)</Text>
-              <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                 <Picker selectedValue={currentItem.itemName} onValueChange={(v)=>setCurrentItem({...currentItem, itemName: v})} style={{ color: theme.text }}>
-                    <Picker.Item label="Choose Item..." value="" />
-                    {presets.itemNames.map(name => <Picker.Item key={name} label={name} value={name} />)}
-                    <Picker.Item label="-- Custom Item --" value="custom" />
-                 </Picker>
+            {customerFound === true && (
+              <View style={styles.foundBox}>
+                <Ionicons name="checkmark-circle" size={20} color="#2ecc71" />
+                <View>
+                  <Text style={{ color: theme.text, fontWeight: 'bold', fontSize: 16 }}>{customerData.name}</Text>
+                  <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>{customerData.address}</Text>
+                </View>
               </View>
-              {currentItem.itemName === 'custom' && (
-                <TextInput 
-                  style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginTop: 10 }]} 
-                  placeholder="Enter Jewelry Type..." placeholderTextColor="#999"
-                  onChangeText={(v)=>setCurrentItem({...currentItem, itemName: v})}
+            )}
+
+            {customerFound === false && (
+              <View style={styles.regBox}>
+                <Text style={{ color: theme.text, fontSize: 12, marginBottom: 10, opacity: 0.7 }}>New Customer! Please register:</Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]}
+                  placeholder="Full Name *" placeholderTextColor="#999"
+                  value={customerData.name} onChangeText={(v) => setCustomerData({ ...customerData, name: v })}
                 />
-              )}
-
-              <View style={styles.row}>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>METAL</Text>
-                    <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                       <Picker selectedValue={currentItem.metal} onValueChange={(v)=>setCurrentItem({...currentItem, metal: v})} style={{ color: theme.text }}>
-                          <Picker.Item label="Gold" value="gold" /><Picker.Item label="Silver" value="silver" /><Picker.Item label="Diamond" value="diamond" />
-                       </Picker>
-                    </View>
-                 </View>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>PURITY</Text>
-                    <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                       <Picker selectedValue={currentItem.purity} onValueChange={(v)=>setCurrentItem({...currentItem, purity: v})} style={{ color: theme.text }}>
-                          <Picker.Item label="Select..." value="" />
-                          {presets.purities.map(p => <Picker.Item key={p} label={p} value={p} />)}
-                       </Picker>
-                    </View>
-                 </View>
+                <TextInput
+                  style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]}
+                  placeholder="Father's Name" placeholderTextColor="#999"
+                  value={customerData.father_name} onChangeText={(v) => setCustomerData({ ...customerData, father_name: v })}
+                />
+                <Pressable style={[styles.saveCustBtn, { backgroundColor: theme.brand }]} onPress={saveCustomer}>
+                  <Text style={{ color: '#000', fontWeight: 'bold' }}>REGISTER & CONTINUE</Text>
+                </Pressable>
               </View>
+            )}
+          </View>
 
-              <View style={styles.row}>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>WEIGHT (g)</Text>
-                    <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.weight} onChangeText={(v)=>setCurrentItem({...currentItem, weight: v})} />
-                 </View>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>RATE/G (₹)</Text>
-                    <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.ratePerGram} onChangeText={(v)=>setCurrentItem({...currentItem, ratePerGram: v})} />
-                 </View>
+          {/* ADD ITEM FORM */}
+          <View style={[styles.itemForm, { backgroundColor: theme.card, borderColor: theme.brand + '30' }]}>
+            <Text style={[styles.formTitle, { color: theme.brand, fontFamily: Fonts.bold }]}>Add Jewelry Item</Text>
+
+            <Text style={[styles.label, { color: theme.text }]}>ITEM NAME (Preset or Custom)</Text>
+            <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <Picker selectedValue={currentItem.itemName} onValueChange={(v) => setCurrentItem({ ...currentItem, itemName: v })} style={{ color: theme.text }}>
+                <Picker.Item label="Choose Item..." value="" />
+                {presets.itemNames.map(name => <Picker.Item key={name} label={name} value={name} />)}
+                <Picker.Item label="-- Custom Item --" value="custom" />
+              </Picker>
+            </View>
+            {currentItem.itemName === 'custom' && (
+              <TextInput
+                style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginTop: 10 }]}
+                placeholder="Enter Jewelry Type..." placeholderTextColor="#999"
+                onChangeText={(v) => setCurrentItem({ ...currentItem, itemName: v })}
+              />
+            )}
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>METAL</Text>
+                <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <Picker selectedValue={currentItem.metal} onValueChange={(v) => setCurrentItem({ ...currentItem, metal: v })} style={{ color: theme.text }}>
+                    <Picker.Item label="Gold" value="gold" /><Picker.Item label="Silver" value="silver" /><Picker.Item label="Diamond" value="diamond" />
+                  </Picker>
+                </View>
               </View>
-
-              <View style={styles.row}>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>MAKING %</Text>
-                    <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={currentItem.makingChargePercent} onChangeText={(v)=>setCurrentItem({...currentItem, makingChargePercent: v})} />
-                 </View>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>GST %</Text>
-                    <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="3" keyboardType="numeric" value={currentItem.gstPercent} onChangeText={(v)=>setCurrentItem({...currentItem, gstPercent: v})} />
-                 </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>PURITY</Text>
+                <View style={[styles.pickerBox, { backgroundColor: theme.background, borderColor: theme.border }]}>
+                  <Picker selectedValue={currentItem.purity} onValueChange={(v) => setCurrentItem({ ...currentItem, purity: v })} style={{ color: theme.text }}>
+                    <Picker.Item label="Select..." value="" />
+                    {presets.purities.map(p => <Picker.Item key={p} label={p} value={p} />)}
+                  </Picker>
+                </View>
               </View>
+            </View>
 
-              <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItemToCart}>
-                 <Ionicons name="cart-outline" size={20} color="#000" />
-                 <Text style={styles.addBtnText}>Add to Cart</Text>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>WEIGHT (g)</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.weight} onChangeText={(v) => setCurrentItem({ ...currentItem, weight: v })} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>RATE/G (₹)</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0.00" keyboardType="numeric" value={currentItem.ratePerGram} onChangeText={(v) => setCurrentItem({ ...currentItem, ratePerGram: v })} />
+              </View>
+            </View>
+
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>MAKING %</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={currentItem.makingChargePercent} onChangeText={(v) => setCurrentItem({ ...currentItem, makingChargePercent: v })} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>GST %</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} placeholder="3" keyboardType="numeric" value={currentItem.gstPercent} onChangeText={(v) => setCurrentItem({ ...currentItem, gstPercent: v })} />
+              </View>
+            </View>
+
+            <Pressable style={[styles.addBtn, { backgroundColor: theme.brand }]} onPress={addItemToCart}>
+              <Ionicons name="cart-outline" size={20} color="#000" />
+              <Text style={styles.addBtnText}>Add to Cart</Text>
+            </Pressable>
+          </View>
+
+          {/* CART LIST */}
+          <View style={styles.cartSection}>
+            {cart.map((item, idx) => (
+              <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
+                  <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
+                </View>
+                <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
+                <Pressable onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
+                  <Ionicons name="trash-outline" size={18} color="#e74c3c" />
+                </Pressable>
+              </View>
+            ))}
+          </View>
+
+          {/* IMAGES */}
+          <View style={styles.section}>
+            <Text style={[styles.label, { color: theme.text }]}>ATTACHMENTS</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imgRow}>
+              <Pressable style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
+                <Ionicons name="camera" size={24} color={theme.brand} />
               </Pressable>
-           </View>
+              {images.map((img, i) => (
+                <Image key={i} source={{ uri: img }} style={styles.imgThumb} />
+              ))}
+            </ScrollView>
+          </View>
 
-           {/* CART LIST */}
-           <View style={styles.cartSection}>
-                 {cart.map((item, idx) => (
-                   <View key={idx} style={[styles.cartItem, { borderBottomColor: theme.border, backgroundColor: theme.card }]}>
-                      <View style={{ flex: 1 }}>
-                         <Text style={[styles.cartItemName, { color: theme.text, fontFamily: Fonts.bold }]}>{item.itemName} • {item.metal.toUpperCase()}</Text>
-                         <Text style={[styles.cartItemSub, { color: theme.text }]}>{item.weight}g @ ₹{item.ratePerGram}</Text>
-                      </View>
-                      <Text style={[styles.cartItemPrice, { color: theme.text, fontFamily: Fonts.bold }]}>₹{item.finalPrice.toFixed(0)}</Text>
-                      <Pressable onPress={() => removeItem(idx)} style={styles.removeBtn} activeOpacity={0.7}>
-                         <Ionicons name="trash-outline" size={18} color="#e74c3c" />
-                      </Pressable>
-                   </View>
-                 ))}
-           </View>
+          {/* PAYMENT */}
+          <View style={styles.bottomSection}>
+            <View style={[styles.grandTotalBox, { backgroundColor: theme.brand + '10', borderColor: theme.brand }]}>
+              <Text style={[styles.gtLabel, { color: theme.text }]}>GRAND TOTAL</Text>
+              <Text style={[styles.gtVal, { color: theme.brand }]}>₹ {grandTotal.toLocaleString()}</Text>
+            </View>
 
-           {/* IMAGES */}
-           <View style={styles.section}>
-              <Text style={[styles.label, { color: theme.text }]}>ATTACHMENTS</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.imgRow}>
-                 <Pressable style={[styles.pickBtn, { backgroundColor: theme.card, borderColor: theme.border }]} onPress={pickImage}>
-                    <Ionicons name="camera" size={24} color={theme.brand} />
-                 </Pressable>
-                 {images.map((img, i) => (
-                   <Image key={i} source={{ uri: img }} style={styles.imgThumb} />
-                 ))}
-              </ScrollView>
-           </View>
-
-           {/* PAYMENT */}
-           <View style={styles.bottomSection}>
-              <View style={[styles.grandTotalBox, { backgroundColor: theme.brand + '10', borderColor: theme.brand }]}>
-                 <Text style={[styles.gtLabel, { color: theme.text }]}>GRAND TOTAL</Text>
-                 <Text style={[styles.gtVal, { color: theme.brand }]}>₹ {grandTotal.toLocaleString()}</Text>
+            <View style={styles.row}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>ADVANCE PAID</Text>
+                <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={payment.amountPaid} onChangeText={(v) => setPayment({ ...payment, amountPaid: v })} />
               </View>
-
-              <View style={styles.row}>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>ADVANCE PAID</Text>
-                    <TextInput style={[styles.input, { backgroundColor: theme.card, color: theme.text, borderColor: theme.border }]} placeholder="0" keyboardType="numeric" value={payment.amountPaid} onChangeText={(v)=>setPayment({...payment, amountPaid: v})} />
-                 </View>
-                 <View style={{ flex: 1 }}>
-                    <Text style={[styles.label, { color: theme.text }]}>METHOD</Text>
-                    <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
-                       <Picker selectedValue={payment.method} onValueChange={(v)=>setPayment({...payment, method: v})} style={{ color: theme.text }}>
-                          <Picker.Item label="Cash" value="cash" /><Picker.Item label="UPI" value="upi" /><Picker.Item label="Card" value="card" />
-                       </Picker>
-                    </View>
-                 </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.label, { color: theme.text }]}>METHOD</Text>
+                <View style={[styles.pickerBox, { backgroundColor: theme.card, borderColor: theme.border }]}>
+                  <Picker selectedValue={payment.method} onValueChange={(v) => setPayment({ ...payment, method: v })} style={{ color: theme.text }}>
+                    <Picker.Item label="Cash" value="cash" /><Picker.Item label="UPI" value="upi" /><Picker.Item label="Card" value="card" />
+                  </Picker>
+                </View>
               </View>
+            </View>
 
-              <Pressable style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
-                 {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.finalBtnText}>GENERATE DIGITAL INVOICE</Text>}
-              </Pressable>
-           </View>
+            <Pressable style={[styles.finalBtn, { backgroundColor: theme.brand }]} onPress={handleSubmit} disabled={loading}>
+              {loading ? <ActivityIndicator color="#000" /> : <Text style={styles.finalBtnText}>GENERATE DIGITAL INVOICE</Text>}
+            </Pressable>
+          </View>
 
         </View>
 
@@ -449,11 +449,11 @@ const styles = StyleSheet.create({
   label: { fontSize: 9, fontWeight: 'bold', marginBottom: 8, letterSpacing: 1, opacity: 0.6 },
   pickerBox: { borderRadius: 12, borderWidth: 1, overflow: 'hidden', height: 48, justifyContent: 'center' },
   input: { height: 48, borderRadius: 12, borderWidth: 1, paddingHorizontal: 15, fontSize: 13 },
-  
+
   lookupBox: { padding: 18, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
   foundBox: { flexDirection: 'row', alignItems: 'center', gap: 15, marginTop: 15, padding: 15, borderRadius: 15, backgroundColor: 'rgba(46, 204, 113, 0.1)' },
   regBox: { marginTop: 15, paddingTop: 15, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
-  
+
   itemForm: { padding: 18, borderRadius: 25, borderWidth: 1, marginBottom: 20 },
   formTitle: { fontSize: 16, marginBottom: 18 },
   row: { flexDirection: 'row', gap: 12, marginBottom: 15 },

@@ -54,6 +54,23 @@ const billingSchema = new mongoose.Schema(
                     }
                 }
             ],
+            oldItems: [
+                {
+                    itemName: String,
+                    metal: {
+                        type: String,
+                        enum: ['gold', 'silver', 'diamond'],
+                    },
+                    purity: String,
+                    weight: Number,
+                    ratePerGram: Number,
+                    totalValue: Number
+                }
+            ],
+            oldItemsTotal: {
+                type: Number,
+                default: 0
+            },
             grandTotal: {
                 type: Number,
                 required: true,
@@ -81,22 +98,18 @@ const billingSchema = new mongoose.Schema(
                 type: String,
                 enum: ['cash', 'upi', 'card', 'bank_transfer'],
                 default: null
-            }
-        },
-        paymentHistory: [
-            {
-                amount: Number,
-                method: String,
-                date: { type: Date, default: Date.now },
-                notes: String
-            }
-        ]
-
-
+            },
+            paymentHistory: [
+                {
+                    amount: Number,
+                    method: String,
+                    date: { type: Date, default: Date.now },
+                    note: String
+                }
+            ]
+        }
     },
     { timestamps: true }
 )
 
-
 module.exports = mongoose.model('Bill', billingSchema)
-

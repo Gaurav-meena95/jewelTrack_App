@@ -1,8 +1,8 @@
 import Pressable from '../../../../components/ui/Pressable';
 import React, { useState, useEffect } from 'react';
-import { 
-  View, Text, TextInput, 
-  StyleSheet, ScrollView, ActivityIndicator, 
+import {
+  View, Text, TextInput,
+  StyleSheet, ScrollView, ActivityIndicator,
   KeyboardAvoidingView, Platform, Image
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -37,7 +37,7 @@ export default function CreateCollateral() {
         if (profRes.data?.success) {
           setPresets({ itemNames: profRes.data.data.user.itemNames || [] });
         }
-      } catch (err) {}
+      } catch (err) { }
     };
     fetchSettings();
   }, []);

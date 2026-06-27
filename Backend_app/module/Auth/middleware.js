@@ -17,37 +17,33 @@ exports.verifyUserMiddleware = (req, res, next) => {
         if (prefix !== 'JWT') {
             return res.status(401).json({ message: "Invalid Token" })
         }
-
+        
         jwt.verify(token, sec_key, (err, decode) => {
-            if (err && err.name === 'TokenExpiredError') {
-                if (!refreshToken) {
-                    return res.status(401).json({ message: "Refresh Token required" })
-                }
-                jwt.verify(refreshToken, sec_key, (err, refreshDecode) => {
-                    if (err) {
-                        console.log('[MW] Refresh token invalid —', err.message)
-                        return res.status(401).json({ msg: 'Invalid Refresh Token' })
-                    }
-                    const { accessToken, newRefreshToken } = generateNewTokens(refreshDecode)
-                    res.set('x-access-token', accessToken)
-                    res.set('x-refresh-token', newRefreshToken)
-                    req.user = refreshDecode
-                    next()
-                })
-            } else if (err) {
-                console.log('[MW] Token invalid —', err.message)
-                return res.status(401).json({ message: 'Invalid token' })
-            } else {
-                const { accessToken, newRefreshToken } = generateNewTokens(decode)
-                res.set('x-access-token', accessToken)
-                res.set('x-refresh-token', newRefreshToken)
-                req.user = decode
-                next()
-            }
+             if (err && err.name === 'TokenExpiredError') {
+                 if (!refreshToken) {
+                     return res.status(401).json({ message: "Refresh Token required" })
+                 }
+                 jwt.verify(refreshToken, sec_key, (err, refreshDecode) => {
+                     if (err) {
+                         return res.status(401).json({ msg: 'Invalid Refresh Token 2' })
+                     }
+                     const { accessToken, newRefreshToken } = generateNewTokens(refreshDecode)
+                     
+                     res.set('x-access-token', accessToken)
+                     res.set('x-refresh-token', newRefreshToken)
+                     req.user = refreshDecode
+                     next()
+                 })
+             } else if (err) {
+                 return res.status(401).json({ message: 'Invalid token' })
+             } else {
+                 req.user = decode
+                 next()
+             }
         })
 
     } catch (error) {
-        console.log('[MW] ERROR —', error)
+        console.log(error)
         return res.status(500).json({ message: 'Internal Server Error' })
     }
 }

@@ -18,11 +18,12 @@ const createCollatral = async (req, res) => {
         if (!existing) {
             return res.status(400).json({ success: false, message: 'User is not exist!' })
         }
-        const newCollatral = await Collateral.create({ phone, shopkeeperId: shopkeeper_id, customerId: existing._id, jewellery, image, price, interestRate, status, remainingAmount: price, weight })
+        const roundedPrice = Math.round(Number(price) || 0)
+        const newCollatral = await Collateral.create({ phone, shopkeeperId: shopkeeper_id, customerId: existing._id, jewellery, image, price: roundedPrice, interestRate, status, remainingAmount: roundedPrice, weight })
         console.log('[Collateral] Created — ID:', newCollatral._id, '| customer:', phone)
         return res.status(200).json({ success: true, message: 'collatral create successfully', data: { newCollatral } })
     } catch (error) {
-        console.log('[Collateral] createCollatral ERROR —', error)
+        console.log(error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
 }
@@ -41,12 +42,22 @@ const updateCollatral = async (req, res) => {
         }
         const updated = await Collateral.updateOne(
             { _id: collatral_id },
-            { weight, jewellery, image, price, interestRate, status, paymentHistory, totalPaid, remainingAmount }
+            { 
+                weight, 
+                jewellery, 
+                image, 
+                price: price !== undefined ? Math.round(Number(price)) : undefined, 
+                interestRate, 
+                status, 
+                paymentHistory, 
+                totalPaid: totalPaid !== undefined ? Math.round(Number(totalPaid)) : undefined, 
+                remainingAmount: remainingAmount !== undefined ? Math.round(Number(remainingAmount)) : undefined 
+            }
         )
         console.log('[Collateral] Updated — ID:', collatral_id, '| status:', status)
         return res.status(200).json({ success: true, message: "Collateral upadate successfully", data: { updated } })
     } catch (error) {
-        console.log('[Collateral] updateCollatral ERROR —', error)
+        console.log(error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
 }
@@ -66,7 +77,7 @@ const deleteCollatral = async (req, res) => {
         console.log('[Collateral] Deleted — ID:', collatral_id)
         return res.status(200).json({ success: true, message: 'collatral successfully deleted', data: { deleted } })
     } catch (error) {
-        console.log('[Collateral] deleteCollatral ERROR —', error)
+        console.log(error)
         return res.status(500).json({ success: false, message: 'Internal Server Error' })
     }
 }
@@ -83,11 +94,57 @@ const allCollatral = async (req, res) => {
         console.log('[Collateral] Fetched', data.length, 'records | phone filter:', phone || 'none')
         return res.status(200).json({ success: true, message: "Collaterals fetched", data: { data } })
     } catch (error) {
-        console.log('[Collateral] allCollatral ERROR —', error);
+        console.log(error);
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 };
 
+const recordColletralPayment = async (req, res) => {
+    try {
+        const { collatral_id } = req.query
+        const { additionalPayment, paymentMethod, note } = req.body
 
-module.exports = { createCollatral, updateCollatral, deleteCollatral, allCollatral }
+        if (!collatral_id) return res.status(400).json({ success: false, message: 'collatral_id is required' })
 
+        const existing = await Collateral.findById(collatral_id)
+        if (!existing) return res.status(404).json({ success: false, message: 'Collateral not found' })
+
+        const totalPrice = Math.round(Number(existing.price) || 0)
+        const currentPaid = Math.round(Number(existing.totalPaid) || 0)
+        
+        const newPaymentAmount = Math.round(Number(additionalPayment) || 0)
+        const newTotalPaid = currentPaid + newPaymentAmount
+
+        if (newTotalPaid > totalPrice) {
+            return res.status(400).json({ success: false, message: 'Payment exceeds total loan amount' })
+        }
+
+        const newRemaining = Math.round(totalPrice - newTotalPaid)
+        const history = existing.paymentHistory || []
+        
+        history.push({
+            amount: newPaymentAmount,
+            method: paymentMethod || 'cash',
+            date: new Date(),
+            note: note || 'Loan repayment recorded'
+        })
+
+        const updated = await Collateral.findByIdAndUpdate(
+            collatral_id,
+            {
+                totalPaid: newTotalPaid,
+                remainingAmount: newRemaining,
+                paymentHistory: history,
+                status: newTotalPaid >= totalPrice ? 'returned' : existing.status
+            },
+            { new: true }
+        ).populate('customerId', 'name phone')
+
+        return res.status(200).json({ success: true, message: 'Payment recorded successfully', data: { updated } })
+    } catch (error) {
+        console.log(error)
+        return res.status(500).json({ success: false, message: 'Internal Server Error' })
+    }
+}
+
+module.exports = { createCollatral, updateCollatral, deleteCollatral, allCollatral, recordColletralPayment }

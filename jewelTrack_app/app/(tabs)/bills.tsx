@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  Pressable, 
-  ActivityIndicator, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Pressable,
+  ActivityIndicator,
   RefreshControl,
   Alert,
   Modal,
@@ -25,7 +25,7 @@ export default function Bills() {
   const router = useRouter();
   const colorScheme = useColorScheme() ?? 'light';
   const theme = Colors[colorScheme];
-  
+
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -106,10 +106,10 @@ export default function Bills() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return '#2ecc71'; 
-      case 'partially_paid': return '#f39c12'; 
-      case 'unpaid': 
-      default: return '#e74c3c'; 
+      case 'paid': return '#2ecc71';
+      case 'partially_paid': return '#f39c12';
+      case 'unpaid':
+      default: return '#e74c3c';
     }
   };
 
@@ -125,7 +125,7 @@ export default function Bills() {
 
   const handleRecordPayment = async () => {
     if (!payAmount) return Alert.alert('Error', 'Please enter payment amount.');
-    
+
     setSubmittingPayment(true);
     try {
       const payload = {
@@ -150,7 +150,7 @@ export default function Bills() {
       const customer = bill.customerId || { name: 'Walk-in Customer', phone: '', address: '' };
       const items = bill.invoice?.items || [];
       const grandTotal = bill.invoice?.grandTotal || 0;
-      
+
       const htmlContent = `
         <html>
           <head>
@@ -233,7 +233,7 @@ export default function Bills() {
 
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
       const canShare = await Sharing.isAvailableAsync();
-      
+
       if (canShare) {
         await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf', dialogTitle: 'Share Invoice' });
       } else {
@@ -256,23 +256,23 @@ export default function Bills() {
       <View style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}>
         <View style={styles.cardHeader}>
           <View style={styles.headerLeft}>
-             <View style={[styles.iconBox, { backgroundColor: statusColor + '15' }]}>
-                <Ionicons name="receipt" size={24} color={statusColor} />
-             </View>
-             <View>
-                <Text style={[styles.customerName, { color: theme.text }]}>{customer.name}</Text>
-                <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.5 }]}>
-                  {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </Text>
-             </View>
+            <View style={[styles.iconBox, { backgroundColor: statusColor + '15' }]}>
+              <Ionicons name="receipt" size={24} color={statusColor} />
+            </View>
+            <View>
+              <Text style={[styles.customerName, { color: theme.text }]}>{customer.name}</Text>
+              <Text style={[styles.customerPhone, { color: theme.text, opacity: 0.5 }]}>
+                {new Date(item.createdAt).toLocaleDateString()} • {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+            </View>
           </View>
           <View style={{ alignItems: 'flex-end' }}>
-             <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(0)}</Text>
-             <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-                 <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 9 }}>
-                    {payment.paymentStatus.replace('_', ' ').toUpperCase()}
-                 </Text>
-             </View>
+            <Text style={[styles.totalAmt, { color: theme.text }]}>₹ {grandTotal.toFixed(0)}</Text>
+            <View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+              <Text style={{ color: statusColor, fontWeight: 'bold', fontSize: 9 }}>
+                {payment.paymentStatus.replace('_', ' ').toUpperCase()}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -287,34 +287,34 @@ export default function Bills() {
           <Ionicons name="sparkles" size={14} color={theme.brand} style={{ marginRight: 5 }} />
           <Text style={[styles.itemName, { color: theme.text, flex: 1 }]}>{firstItem.itemName} {item.invoice?.items.length > 1 ? `+${item.invoice.items.length - 1} more items` : ''}</Text>
           <Pressable style={{ padding: 5 }} onPress={() => printBill(item)}>
-             <Ionicons name="share-outline" size={20} color={theme.text} style={{ opacity: 0.5 }} />
+            <Ionicons name="share-outline" size={20} color={theme.text} style={{ opacity: 0.5 }} />
           </Pressable>
         </View>
-        
+
         <View style={styles.statsRow}>
-           <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>PAID</Text>
-              <Text style={[styles.statVal, { color: '#2ecc71' }]}>₹ {payment.amountPaid.toFixed(0)}</Text>
-           </View>
-           <View style={styles.statBox}>
-              <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>DUE</Text>
-              <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {payment.remainingAmount.toFixed(0)}</Text>
-           </View>
-           {payment.paymentStatus !== 'paid' && (
-             <Pressable 
-               style={[styles.payBtn, { backgroundColor: theme.brand }]} 
-               onPress={() => openPaymentModal(item)}
-             >
-               <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 11 }}>RECEIVE</Text>
-             </Pressable>
-           )}
+          <View style={styles.statBox}>
+            <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>PAID</Text>
+            <Text style={[styles.statVal, { color: '#2ecc71' }]}>₹ {payment.amountPaid.toFixed(0)}</Text>
+          </View>
+          <View style={styles.statBox}>
+            <Text style={[styles.statLabel, { color: theme.text, opacity: 0.4 }]}>DUE</Text>
+            <Text style={[styles.statVal, { color: '#e74c3c' }]}>₹ {payment.remainingAmount.toFixed(0)}</Text>
+          </View>
+          {payment.paymentStatus !== 'paid' && (
+            <Pressable
+              style={[styles.payBtn, { backgroundColor: theme.brand }]}
+              onPress={() => openPaymentModal(item)}
+            >
+              <Text style={{ color: '#000', fontWeight: 'bold', fontSize: 11 }}>RECEIVE</Text>
+            </Pressable>
+          )}
         </View>
       </View>
     );
   };
 
   const renderCustomerItem = ({ item }: { item: any }) => (
-    <Pressable 
+    <Pressable
       style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
       onPress={() => {
         setSearchQuery(item.phone);
@@ -352,40 +352,40 @@ export default function Bills() {
       {!loading && viewMode === 'customers' && (
         <View style={styles.statsHeader}>
           <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
-             <Text style={[styles.miniLabel, { color: theme.text }]}>SALES</Text>
-             <Text style={[styles.miniVal, { color: theme.text }]}>₹{(metrics.total / 1000).toFixed(1)}k</Text>
+            <Text style={[styles.miniLabel, { color: theme.text }]}>SALES</Text>
+            <Text style={[styles.miniVal, { color: theme.text }]}>₹{(metrics.total / 1000).toFixed(1)}k</Text>
           </View>
           <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
-             <Text style={[styles.miniLabel, { color: theme.text }]}>PENDING</Text>
-             <Text style={[styles.miniVal, { color: '#e74c3c' }]}>₹{(metrics.due / 1000).toFixed(1)}k</Text>
+            <Text style={[styles.miniLabel, { color: theme.text }]}>PENDING</Text>
+            <Text style={[styles.miniVal, { color: '#e74c3c' }]}>₹{(metrics.due / 1000).toFixed(1)}k</Text>
           </View>
           <View style={[styles.miniStat, { backgroundColor: theme.card, borderColor: theme.border }]}>
-             <Text style={[styles.miniLabel, { color: theme.text }]}>BILLS</Text>
-             <Text style={[styles.miniVal, { color: theme.brand }]}>{metrics.count}</Text>
+            <Text style={[styles.miniLabel, { color: theme.text }]}>BILLS</Text>
+            <Text style={[styles.miniVal, { color: theme.brand }]}>{metrics.count}</Text>
           </View>
         </View>
       )}
 
       {/* Header Actions */}
       <View style={styles.actionContainer}>
-         <Pressable 
-            style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
-            onPress={() => router.push('/create-bill')}
-         >
-            <Ionicons name="add" size={24} color="#000" />
-            <Text style={[styles.addNewText, { color: '#000' }]}>Create Invoice</Text>
-         </Pressable>
+        <Pressable
+          style={[styles.addNewBtn, { backgroundColor: theme.brand }]}
+          onPress={() => router.push('/create-bill')}
+        >
+          <Ionicons name="add" size={24} color="#000" />
+          <Text style={[styles.addNewText, { color: '#000' }]}>Create Invoice</Text>
+        </Pressable>
       </View>
 
       {/* View Switcher - Segmented Control Style */}
       <View style={[styles.tabSwitcher, { backgroundColor: theme.card, borderColor: theme.border }]}>
-        <Pressable 
+        <Pressable
           style={[styles.tab, viewMode === 'customers' && { backgroundColor: theme.brand }]}
           onPress={() => setViewMode('customers')}
         >
           <Text style={[styles.tabText, { color: viewMode === 'customers' ? '#000' : theme.text, opacity: viewMode === 'customers' ? 1 : 0.5 }]}>CUSTOMERS</Text>
         </Pressable>
-        <Pressable 
+        <Pressable
           style={[styles.tab, viewMode === 'all' && { backgroundColor: theme.brand }]}
           onPress={() => {
             setViewMode('all');
@@ -414,8 +414,8 @@ export default function Bills() {
         </View>
       ) : (
         <FlatList
-          data={viewMode === 'customers' 
-            ? uniqueCustomers 
+          data={viewMode === 'customers'
+            ? uniqueCustomers
             : items.filter(i => (i.customerId?.name || '').toLowerCase().includes(searchQuery.toLowerCase()))
           }
           renderItem={viewMode === 'customers' ? renderCustomerItem : renderItem}
@@ -428,7 +428,7 @@ export default function Bills() {
             <View style={styles.empty}>
               <Ionicons name="receipt-outline" size={80} color={theme.icon} style={{ opacity: 0.2 }} />
               <Text style={[styles.emptyText, { color: theme.text, opacity: 0.5 }]}>No bills generated yet</Text>
-              <Pressable 
+              <Pressable
                 style={[styles.emptyBtn, { borderColor: theme.brand }]}
                 onPress={() => router.push('/create-bill')}
               >
@@ -441,83 +441,83 @@ export default function Bills() {
 
       <Modal visible={paymentModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
-           <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
-             <Text style={[styles.modalTitle, { color: theme.text }]}>Invoice Details</Text>
-             {selectedBill && (
-                 <View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
-                        <Text style={{ color: theme.text, opacity: 0.6 }}>Total Amount</Text>
-                        <Text style={{ color: theme.text, fontWeight: 'bold' }}>₹ {selectedBill.invoice.grandTotal.toFixed(2)}</Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
-                        <Text style={{ color: theme.text, opacity: 0.6 }}>Remaining Due</Text>
-                        <Text style={{ color: '#e74c3c', fontWeight: 'bold' }}>₹ {selectedBill.payment.remainingAmount.toFixed(2)}</Text>
-                    </View>
-                    
-                    <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 10 }]}>Transaction History</Text>
-                    <ScrollView style={{ maxHeight: 120, marginBottom: 20 }}>
-                       {selectedBill?.paymentHistory?.length > 0 ? (
-                          selectedBill.paymentHistory.map((h: any, i: number) => (
-                            <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
-                               <View>
-                                  <Text style={[styles.histAmt, { color: theme.text }]}>₹{h.amount}</Text>
-                                  <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>{new Date(h.date).toLocaleString()}</Text>
-                               </View>
-                               <View style={[styles.statusBadge, { backgroundColor: theme.brand + '15', marginTop: 0 }]}>
-                                  <Text style={{ color: theme.brand, fontSize: 10, fontWeight: 'bold' }}>{h.method?.toUpperCase()}</Text>
-                                </View>
-                            </View>
-                          ))
-                       ) : (
-                          <Text style={{ color: theme.text, opacity: 0.4, fontSize: 12, fontStyle: 'italic', paddingVertical: 10 }}>No previous payments recorded.</Text>
-                       )}
-                    </ScrollView>
-                 </View>
-              )}
+          <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Invoice Details</Text>
+            {selectedBill && (
+              <View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 }}>
+                  <Text style={{ color: theme.text, opacity: 0.6 }}>Total Amount</Text>
+                  <Text style={{ color: theme.text, fontWeight: 'bold' }}>₹ {selectedBill.invoice.grandTotal.toFixed(2)}</Text>
+                </View>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 }}>
+                  <Text style={{ color: theme.text, opacity: 0.6 }}>Remaining Due</Text>
+                  <Text style={{ color: '#e74c3c', fontWeight: 'bold' }}>₹ {selectedBill.payment.remainingAmount.toFixed(2)}</Text>
+                </View>
 
-              <Text style={[styles.modalLabel, { color: theme.text, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 15 }]}>Amount to Receive (₹)</Text>
-             <TextInput 
-                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]} 
-                placeholder="0.00"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                value={payAmount}
-                onChangeText={setPayAmount}
-             />
-
-             <Text style={[styles.modalLabel, { color: theme.text }]}>Payment Method</Text>
-             <View style={[styles.pickerContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
-                <Picker
-                  selectedValue={payMethod}
-                  onValueChange={setPayMethod}
-                  style={{ color: theme.text }}
-                  dropdownIconColor={theme.brand}
-                >
-                  <Picker.Item label="Cash" value="cash" />
-                  <Picker.Item label="UPI" value="upi" />
-                  <Picker.Item label="Card" value="card" />
-                  <Picker.Item label="Bank Transfer" value="bank_transfer" />
-                </Picker>
+                <Text style={[styles.sectionTitle, { color: theme.text, marginBottom: 10 }]}>Transaction History</Text>
+                <ScrollView style={{ maxHeight: 120, marginBottom: 20 }}>
+                  {selectedBill?.paymentHistory?.length > 0 ? (
+                    selectedBill.paymentHistory.map((h: any, i: number) => (
+                      <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
+                        <View>
+                          <Text style={[styles.histAmt, { color: theme.text }]}>₹{h.amount}</Text>
+                          <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>{new Date(h.date).toLocaleString()}</Text>
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: theme.brand + '15', marginTop: 0 }]}>
+                          <Text style={{ color: theme.brand, fontSize: 10, fontWeight: 'bold' }}>{h.method?.toUpperCase()}</Text>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={{ color: theme.text, opacity: 0.4, fontSize: 12, fontStyle: 'italic', paddingVertical: 10 }}>No previous payments recorded.</Text>
+                  )}
+                </ScrollView>
               </View>
+            )}
 
-              <View style={styles.modalBtns}>
-                 <Pressable 
-                   style={[styles.modalCloseBtn, { borderColor: theme.border }]} 
-                   onPress={() => setPaymentModalVisible(false)}
-                   disabled={submittingPayment}
-                 >
-                   <Text style={{ color: theme.text, fontWeight: 'bold' }}>Cancel</Text>
-                 </Pressable>
+            <Text style={[styles.modalLabel, { color: theme.text, borderTopWidth: 1, borderTopColor: theme.border, paddingTop: 15 }]}>Amount to Receive (₹)</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border }]}
+              placeholder="0.00"
+              placeholderTextColor="#999"
+              keyboardType="numeric"
+              value={payAmount}
+              onChangeText={setPayAmount}
+            />
 
-                 <Pressable 
-                   style={[styles.modalSubmitBtn, { backgroundColor: theme.brand }]} 
-                   onPress={handleRecordPayment}
-                   disabled={submittingPayment}
-                 >
-                   {submittingPayment ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Receive Pay</Text>}
-                 </Pressable>
-              </View>
-           </View>
+            <Text style={[styles.modalLabel, { color: theme.text }]}>Payment Method</Text>
+            <View style={[styles.pickerContainer, { backgroundColor: theme.background, borderColor: theme.border }]}>
+              <Picker
+                selectedValue={payMethod}
+                onValueChange={setPayMethod}
+                style={{ color: theme.text }}
+                dropdownIconColor={theme.brand}
+              >
+                <Picker.Item label="Cash" value="cash" />
+                <Picker.Item label="UPI" value="upi" />
+                <Picker.Item label="Card" value="card" />
+                <Picker.Item label="Bank Transfer" value="bank_transfer" />
+              </Picker>
+            </View>
+
+            <View style={styles.modalBtns}>
+              <Pressable
+                style={[styles.modalCloseBtn, { borderColor: theme.border }]}
+                onPress={() => setPaymentModalVisible(false)}
+                disabled={submittingPayment}
+              >
+                <Text style={{ color: theme.text, fontWeight: 'bold' }}>Cancel</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.modalSubmitBtn, { backgroundColor: theme.brand }]}
+                onPress={handleRecordPayment}
+                disabled={submittingPayment}
+              >
+                {submittingPayment ? <ActivityIndicator color="#fff" size="small" /> : <Text style={{ color: '#fff', fontWeight: 'bold' }}>Receive Pay</Text>}
+              </Pressable>
+            </View>
+          </View>
         </View>
       </Modal>
 

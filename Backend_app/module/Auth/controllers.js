@@ -7,11 +7,15 @@ const { validationInput } = require('../../utils/utils')
 const signup = async (req, res) => {
     try {
         const { shopName, name, email, phone, password, role } = req.body
-        const value = validationInput({ shopName, name, email, phone, password, role })
+        const validationFields = { name, email, phone, password, role };
+        if (role === 'shopkeeper') validationFields.shopName = shopName;
+
+        const value = validationInput(validationFields)
         if (value) {
             return res.status(403).json({ success: false, message: `Check missing value ${value}` })
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            console.log('Validation Error: Invalid Email')
             return res.status(401).json({ success: false, message: "Invalid Email Address" })
         }
         if (!/^\d{10}$/.test(phone)) {
@@ -20,20 +24,25 @@ const signup = async (req, res) => {
         if (!/(?=.*[!@#$%^&*])(?=.{8,})/.test(password)) {
             return res.status(400).json({ success: false, message: "Password must be at least 8 characters long and contain one special character" })
         }
-        const exsiting = await User.findOne({ $or: [{ email }, { phone }] });
+
+        const exsiting = await User.findOne({
+            $or: [{ email }, { phone }]
+        });
         if (exsiting) {
             return res.status(400).json({ success: false, message: 'User is already exists' })
         }
         const hashedPassword = await bcrypt.hash(password, 10)
-        const newUser = await User.create({ shopName, name, email, phone, password: hashedPassword, role });
+        const newUser = await User.create({
+            shopName, name, email, phone,
+            password: hashedPassword, role,
+        });
         console.log('[Signup] SUCCESS —', email)
         return res.status(201).json({ success: true, message: 'Signup successful', data: { user: newUser } })
     } catch (error) {
-        console.log('[Signup] ERROR —', error)
+        console.log(error)
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
-
 
 const login = async (req, res) => {
     try {
@@ -44,45 +53,49 @@ const login = async (req, res) => {
             return res.status(403).json({ success: false, message: `Check missing value ${value}` })
         }
         let existing;
-        if (identifier.includes('@')) {
-            existing = await User.findOne({ email: identifier, role })
+        if (identifier.includes('@')){
+             existing = await User.findOne({ email: identifier, role })
         } else {
-            existing = await User.findOne({ phone: identifier, role })
+             existing = await User.findOne({ phone: identifier, role })
         }
         
         if (!existing) {
-            console.log('[Login] FAILED — user not found:', identifier, '| role:', role)
+            console.log('User not found:', { identifier, role });
             return res.status(404).json({ success: false, message: "User not found or Check your Role " })
-        }
-
-        const isPasswordMatch = bcrypt.compareSync(password, existing.password)
-        if (isPasswordMatch) {
-            const jwtToken = jwt.sign(
-                { id: existing.id, email: existing.email, role: existing.role },
-                sec_key,
-                { expiresIn: '1h' }
-            )
-            const refreshToken = jwt.sign(
-                { id: existing.id, email: existing.email, role: existing.role },
-                sec_key,
-                { expiresIn: '7d' }
-            )
-            console.log('[Login] SUCCESS —', existing.email)
-            return res.status(200).json({ success: true, message: "Login Successfully", data: { 
-                user: existing,
-                token: jwtToken,
-                refreshToken
-            }})
+        } else if (existing.isBlocked) {
+            return res.status(403).json({ success: false, message: "Your account has been blocked by the Administrator. Please contact support." })
         } else {
-            console.log('[Login] FAILED — password mismatch for:', existing.email)
-            return res.status(401).json({ success: false, message: 'Invalid credentials' })
+            console.log('User found:', existing.email);
+            const isPasswordMatch = bcrypt.compareSync(password, existing.password)
+            if (isPasswordMatch) {
+                const jwtToken = jwt.sign(
+                    { id: existing.id, email: existing.email, role: existing.role },
+                    sec_key,
+                    { expiresIn: '1h' }
+                )
+                const refreshToken = jwt.sign(
+                    { id: existing.id, email: existing.email, role: existing.role },
+                    sec_key,
+                    { expiresIn: '7d' }
+                )
+                console.log('Login successful, sending tokens');
+                return res.status(200).json({ success: true, message: "Login Successfully", data: { 
+                    user: existing,
+                    token: jwtToken,
+                    refreshToken
+                } })
+            } else {
+                console.log('Password mismatch');
+                return res.status(401).json({ success: false, message: 'Invalid credentials' })
+            }
         }
     } catch (error) {
-        console.log('[Login] ERROR —', error)
+        console.log(error)
         res.status(500).json({ success: false, message: 'Login Failed', data: { error: error.message } })
     }
 }
-const setting =  async(req,res)=>{
+
+const setting = async (req, res) => {
      try {
         const { shopName, name, email, phone, password, itemNames, purities } = req.body
         const userId = req.user.id
@@ -133,6 +146,5 @@ const setting =  async(req,res)=>{
         return res.status(500).json({ success: false, message: "Internal Server Error" })
     }
 }
-
 
 module.exports = {signup,login,setting}

@@ -4,7 +4,6 @@ const user = new mongoose.Schema(
     {
         shopName:{
             type:String,
-            required:true
         },
         name: {
             type: String,
@@ -35,7 +34,17 @@ const user = new mongoose.Schema(
         purities: {
             type: [String],
             default: []
-        }
+        },
+        isBlocked: {
+            type: Boolean,
+            default: false
+        },
+        alerts: [
+            {
+                message: String,
+                createdAt: { type: Date, default: Date.now }
+            }
+        ]
         
     },
     {
