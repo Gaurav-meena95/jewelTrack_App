@@ -37,6 +37,7 @@ export default function BillsComponent() {
   const [selectedBill, setSelectedBill] = useState<any>(null);
   const [payAmount, setPayAmount] = useState('');
   const [payMethod, setPayMethod] = useState('cash');
+  const [payNote, setPayNote] = useState('');
   const [submittingPayment, setSubmittingPayment] = useState(false);
 
   const fetchBills = async (isRefreshing = false) => {
@@ -120,6 +121,7 @@ export default function BillsComponent() {
     setSelectedBill(bill);
     setPayAmount('');
     setPayMethod('cash');
+    setPayNote('');
     setPaymentModalVisible(true);
   };
 
@@ -130,7 +132,8 @@ export default function BillsComponent() {
     try {
       const payload = {
         additionalPayment: parseFloat(payAmount),
-        paymentMethod: payMethod
+        paymentMethod: payMethod,
+        note: payNote
       };
       const res = await api.patch(`/customers/bills/pay?bill_id=${selectedBill._id}`, payload);
       if (res.data.success) {
@@ -410,47 +413,88 @@ export default function BillsComponent() {
       <Modal visible={paymentModalVisible} transparent animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: theme.card, borderColor: theme.border }]}>
-            <Text style={[styles.modalTitle, { color: theme.text, fontFamily: Fonts.bold }]}>Record Due Payment</Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+              <Text style={[styles.modalTitle, { color: theme.text, fontFamily: Fonts.bold, marginBottom: 0 }]}>Record Due Payment</Text>
+              <Pressable onPress={() => setPaymentModalVisible(false)}>
+                <Ionicons name="close" size={24} color={theme.text} />
+              </Pressable>
+            </View>
             
-            <View style={{ marginBottom: 15 }}>
-              <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Invoice No.</Text>
-              <Text style={{ color: theme.text, fontSize: 15, fontWeight: 'bold', marginTop: 4 }}>#{selectedBill?._id.slice(-8).toUpperCase()}</Text>
-            </View>
-
-            <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Grand Total</Text>
-                <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginTop: 4 }}>₹ {selectedBill?.invoice?.grandTotal}</Text>
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+              <View style={{ marginBottom: 15 }}>
+                <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Invoice No.</Text>
+                <Text style={{ color: theme.text, fontSize: 15, fontWeight: 'bold', marginTop: 4 }}>#{selectedBill?._id.slice(-8).toUpperCase()}</Text>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Remaining Due</Text>
-                <Text style={{ color: '#e74c3c', fontSize: 18, fontWeight: 'bold', marginTop: 4 }}>₹ {selectedBill?.payment?.remainingAmount}</Text>
+
+              <View style={{ flexDirection: 'row', gap: 15, marginBottom: 20 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Grand Total</Text>
+                  <Text style={{ color: theme.text, fontSize: 18, fontWeight: 'bold', marginTop: 4 }}>₹ {selectedBill?.invoice?.grandTotal}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12 }}>Remaining Due</Text>
+                  <Text style={{ color: '#e74c3c', fontSize: 18, fontWeight: 'bold', marginTop: 4 }}>₹ {selectedBill?.payment?.remainingAmount}</Text>
+                </View>
               </View>
-            </View>
 
-            <Text style={[styles.modalLabel, { color: theme.text }]}>Amount Paid (₹)</Text>
-            <TextInput placeholderTextColor="#999"
-              style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 15 }]}
-              placeholder="0.00"
-              keyboardType="numeric"
-              value={payAmount}
-              onChangeText={setPayAmount}
-            />
+              <Text style={[styles.modalLabel, { color: theme.text }]}>Amount Paid (₹)</Text>
+              <TextInput placeholderTextColor="#999"
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 15 }]}
+                placeholder="0.00"
+                keyboardType="numeric"
+                value={payAmount}
+                onChangeText={setPayAmount}
+              />
 
-            <Text style={[styles.modalLabel, { color: theme.text }]}>Payment Method</Text>
-            <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 20 }]}>
-              <Picker
-                selectedValue={payMethod}
-                onValueChange={(itemValue) => setPayMethod(itemValue)}
-                style={{ color: theme.text }}
-                dropdownIconColor={theme.text}
-              >
-                <Picker.Item label="Cash" value="cash" color={theme.text} />
-                <Picker.Item label="UPI" value="upi" color={theme.text} />
-                <Picker.Item label="Card" value="card" color={theme.text} />
-                <Picker.Item label="Bank Transfer" value="bank_transfer" color={theme.text} />
-              </Picker>
-            </View>
+              <Text style={[styles.modalLabel, { color: theme.text }]}>Payment Method</Text>
+              <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 15 }]}>
+                <Picker
+                  selectedValue={payMethod}
+                  onValueChange={(itemValue) => setPayMethod(itemValue)}
+                  style={{ color: theme.text }}
+                  dropdownIconColor={theme.text}
+                >
+                  <Picker.Item label="Cash" value="cash" color={theme.text} />
+                  <Picker.Item label="UPI" value="upi" color={theme.text} />
+                  <Picker.Item label="Card" value="card" color={theme.text} />
+                  <Picker.Item label="Bank Transfer" value="bank_transfer" color={theme.text} />
+                </Picker>
+              </View>
+
+              <Text style={[styles.modalLabel, { color: theme.text }]}>Notes / Remarks</Text>
+              <TextInput placeholderTextColor="#999"
+                style={[styles.modalInput, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 15 }]}
+                placeholder="e.g. Paid online, partial cash payment"
+                value={payNote}
+                onChangeText={setPayNote}
+              />
+
+              <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Transaction History</Text>
+              <View style={{ marginBottom: 15 }}>
+                 {selectedBill?.payment?.paymentHistory && selectedBill.payment.paymentHistory.length > 0 ? (
+                   selectedBill.payment.paymentHistory.map((h: any, i: number) => (
+                     <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
+                        <View style={{ flex: 1 }}>
+                           <Text style={[styles.histAmt, { color: theme.text }]}>₹ {h.amount}</Text>
+                           <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>
+                             {new Date(h.date).toLocaleDateString()} • {h.method ? h.method.toUpperCase() : 'CASH'}
+                           </Text>
+                           {h.note && (
+                             <Text style={{ color: theme.text, fontSize: 11, opacity: 0.6, marginTop: 4, fontStyle: 'italic' }}>
+                                Note: {h.note}
+                             </Text>
+                           )}
+                        </View>
+                        <View style={[styles.statusBadge, { backgroundColor: '#2ecc7115', marginTop: 0 }]}>
+                           <Text style={{ color: '#2ecc71', fontSize: 9, fontWeight: 'bold' }}>RECEIVED</Text>
+                        </View>
+                     </View>
+                   ))
+                 ) : (
+                   <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12, fontStyle: 'italic' }}>No transactions recorded yet.</Text>
+                 )}
+              </View>
+            </ScrollView>
 
             <View style={styles.modalBtns}>
               <Pressable

@@ -18,6 +18,7 @@ import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from 'react-native';
 import api from '@/utils/api';
 import { Ionicons } from '@expo/vector-icons';
+import { Picker } from '@react-native-picker/picker';
 
 export default function OrdersComponent() {
   const router = useRouter();
@@ -35,6 +36,16 @@ export default function OrdersComponent() {
   const [showDetail, setShowDetail] = useState(false);
   const [activeOrder, setActiveOrder] = useState<any>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentNote, setPaymentNote] = useState('');
+
+  const openOrderDetailModal = (order: any) => {
+    setActiveOrder(order);
+    setPaymentAmount('');
+    setPaymentMethod('cash');
+    setPaymentNote('');
+    setShowDetail(true);
+  };
 
   const fetchOrders = async (isRefreshing = false) => {
     if (isRefreshing) setRefreshing(true);
@@ -115,23 +126,15 @@ export default function OrdersComponent() {
     if (isNaN(amount)) return Alert.alert('Invalid Amount', 'Please enter a valid numeric amount');
     try {
       setLoading(true);
-      const remain = order.RemainingAmount !== undefined ? order.RemainingAmount : ((order.Total || 0) - (order.AdvancePayment || 0));
-      const newPaid = (order.AdvancePayment || 0) + amount;
-      const newRemain = Math.max(0, remain - amount);
-      const finalStatus = newRemain <= 0 ? 'complete' : newStatus;
-
+      
       const payload = {
-        ...order,
-        AdvancePayment: newPaid,
-        RemainingAmount: newRemain,
-        orderStatus: finalStatus,
-        paymentHistory: [
-          ...(order.paymentHistory || []),
-          { amount, orderStatus: finalStatus, date: new Date(), notes: 'Payment recorded from App' }
-        ]
+        additionalPayment: amount,
+        paymentMethod: paymentMethod,
+        orderStatus: newStatus,
+        note: paymentNote
       };
 
-      const res = await api.patch(`/customers/orders/update/?order_id=${order._id}`, payload);
+      const res = await api.patch(`/customers/orders/pay?order_id=${order._id}`, payload);
       if (res.data.success) {
         Alert.alert('Success', 'Order updated successfully!');
         setShowDetail(false);
@@ -190,7 +193,7 @@ export default function OrdersComponent() {
     return (
       <Pressable 
         style={[styles.card, { backgroundColor: theme.card, borderColor: theme.border }]}
-        onPress={() => { setActiveOrder(item); setShowDetail(true); }}
+        onPress={() => openOrderDetailModal(item)}
       >
         <View style={styles.orderInfo}>
           <Text style={[styles.itemName, { color: theme.text }]}>{firstItemName} {item.items.length > 1 ? `(+${item.items.length - 1})` : ''}</Text>
@@ -310,45 +313,77 @@ export default function OrdersComponent() {
 
                  <Text style={[styles.sectionTitle, { color: theme.text }]}>Actions</Text>
                  <View style={styles.actionBox}>
-                    <TextInput placeholderTextColor="#999" 
-                      style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
-                      placeholder="Add Payment Amount (₹)" keyboardType="numeric"
-                      onChangeText={setPaymentAmount}
-                    />
-                    <View style={styles.row}>
-                       <Pressable 
-                         style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
-                         onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), activeOrder.orderStatus)}
-                       >
-                          <Text style={{ fontWeight: 'bold' }}>Update Payment</Text>
-                       </Pressable>
-                       <Pressable 
-                         style={[styles.actionBtn, { backgroundColor: '#2ecc71', flex: 1 }]}
-                         onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), 'complete')}
-                       >
-                          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Complete Order</Text>
-                       </Pressable>
-                    </View>
-                 </View>
+                     <TextInput placeholderTextColor="#999" 
+                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 10 }]} 
+                       placeholder="Add Payment Amount (₹)" keyboardType="numeric"
+                       value={paymentAmount}
+                       onChangeText={setPaymentAmount}
+                     />
 
-                 <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction History</Text>
-                 <View style={styles.historyList}>
-                    {activeOrder?.paymentHistory?.length > 0 ? (
-                      activeOrder.paymentHistory.map((h: any, i: number) => (
-                        <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
-                           <View>
-                              <Text style={[styles.histAmt, { color: theme.text }]}>₹{h.amount}</Text>
-                              <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>{new Date(h.date).toLocaleString()}</Text>
-                           </View>
-                           <View style={[styles.statusBadge, { backgroundColor: getStatusColor(h.orderStatus) + '15' }]}>
-                              <Text style={{ color: getStatusColor(h.orderStatus), fontSize: 10, fontWeight: 'bold' }}>{h.orderStatus?.toUpperCase()}</Text>
-                           </View>
-                        </View>
-                      ))
-                    ) : (
-                      <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12, fontStyle: 'italic' }}>No transactions recorded yet.</Text>
-                    )}
-                 </View>
+                     <Text style={[styles.modalLabel, { color: theme.text, marginTop: 5 }]}>Payment Method</Text>
+                     <View style={[styles.pickerContainer, { backgroundColor: theme.card, borderColor: theme.border, marginBottom: 10 }]}>
+                        <Picker
+                          selectedValue={paymentMethod}
+                          onValueChange={(itemValue) => setPaymentMethod(itemValue)}
+                          style={{ color: theme.text }}
+                          dropdownIconColor={theme.text}
+                        >
+                          <Picker.Item label="Cash" value="cash" color={theme.text} />
+                          <Picker.Item label="UPI" value="upi" color={theme.text} />
+                          <Picker.Item label="Card" value="card" color={theme.text} />
+                          <Picker.Item label="Bank Transfer" value="bank_transfer" color={theme.text} />
+                        </Picker>
+                     </View>
+
+                     <Text style={[styles.modalLabel, { color: theme.text, marginTop: 5 }]}>Notes / Remarks</Text>
+                     <TextInput placeholderTextColor="#999" 
+                       style={[styles.input, { backgroundColor: theme.background, color: theme.text, borderColor: theme.border, marginBottom: 15 }]} 
+                       placeholder="e.g. Received advance, final settlement"
+                       value={paymentNote}
+                       onChangeText={setPaymentNote}
+                     />
+
+                     <View style={styles.row}>
+                        <Pressable 
+                          style={[styles.actionBtn, { backgroundColor: theme.brand, flex: 1 }]}
+                          onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), activeOrder.orderStatus)}
+                        >
+                           <Text style={{ fontWeight: 'bold' }}>Update Payment</Text>
+                        </Pressable>
+                        <Pressable 
+                          style={[styles.actionBtn, { backgroundColor: '#2ecc71', flex: 1 }]}
+                          onPress={() => handleUpdateStatus(activeOrder, parseFloat(paymentAmount || '0'), 'complete')}
+                        >
+                           <Text style={{ color: '#fff', fontWeight: 'bold' }}>Complete Order</Text>
+                        </Pressable>
+                     </View>
+                  </View>
+
+                  <Text style={[styles.sectionTitle, { color: theme.text }]}>Transaction History</Text>
+                  <View style={styles.historyList}>
+                     {activeOrder?.paymentHistory?.length > 0 ? (
+                       activeOrder.paymentHistory.map((h: any, i: number) => (
+                         <View key={i} style={[styles.historyItem, { borderBottomColor: theme.border }]}>
+                            <View style={{ flex: 1 }}>
+                               <Text style={[styles.histAmt, { color: theme.text }]}>₹ {h.amount}</Text>
+                               <Text style={[styles.histDate, { color: theme.text, opacity: 0.5 }]}>
+                                 {new Date(h.date).toLocaleDateString()} • {h.method ? h.method.toUpperCase() : 'CASH'}
+                               </Text>
+                               {(h.note || h.notes) && (
+                                 <Text style={{ color: theme.text, fontSize: 11, opacity: 0.6, marginTop: 4, fontStyle: 'italic' }}>
+                                    Note: {h.note || h.notes}
+                                 </Text>
+                               )}
+                            </View>
+                            <View style={[styles.statusBadge, { backgroundColor: getStatusColor(h.orderStatus) + '15' }]}>
+                               <Text style={{ color: getStatusColor(h.orderStatus), fontSize: 10, fontWeight: 'bold' }}>{h.orderStatus?.toUpperCase()}</Text>
+                            </View>
+                         </View>
+                       ))
+                     ) : (
+                       <Text style={{ color: theme.text, opacity: 0.5, fontSize: 12, fontStyle: 'italic' }}>No transactions recorded yet.</Text>
+                     )}
+                  </View>
 
                  <Text style={[styles.sectionTitle, { color: theme.text, marginTop: 20 }]}>Notes</Text>
                  <Text style={{ color: theme.text, opacity: 0.7, marginBottom: 20 }}>{activeOrder?.notes || 'No extra notes provided.'}</Text>
@@ -422,5 +457,7 @@ const styles = StyleSheet.create({
   historyList: { marginBottom: 10 },
   historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1 },
   histAmt: { fontSize: 14, fontWeight: 'bold' },
-  histDate: { fontSize: 10, marginTop: 2, opacity: 0.6 }
+  histDate: { fontSize: 10, marginTop: 2, opacity: 0.6 },
+  modalLabel: { fontSize: 11, fontWeight: 'bold', marginBottom: 8, marginTop: 10, opacity: 0.6 },
+  pickerContainer: { borderRadius: 15, borderWidth: 1, overflow: 'hidden', height: 55, justifyContent: 'center', marginBottom: 20 }
 });
